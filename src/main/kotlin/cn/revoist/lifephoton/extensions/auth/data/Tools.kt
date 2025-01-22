@@ -49,7 +49,7 @@ object Tools {
             .filter {
                 it.username eq username
             }.filter {
-                it.password eq MessageDigestUtils.sha256(password)
+                it.password eq password
             }.count() > 0
     }
     fun findUserByToken(token:String): UserDataEntity?{

@@ -27,8 +27,7 @@ object Auth :Plugin(){
         get() = "1"
 
     override fun load() {
-        val mailer = mailerBuilder("smtp.qq.com",587,"no-replay-revoist@qq.com","nfxiwxpavjtvdjdh")
-        MailerManager.defaultMailer = mailer
+
         registerListener(AuthenticationEvent::class.java){
             if (Tools.checkToken(it.user)){
                 it.truth = true

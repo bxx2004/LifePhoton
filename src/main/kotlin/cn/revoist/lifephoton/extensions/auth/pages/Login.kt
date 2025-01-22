@@ -7,6 +7,8 @@ import cn.revoist.lifephoton.extensions.auth.data.entity.response.LoginResponse
 import cn.revoist.lifephoton.ktors.UserSession
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.route.RoutePage
+import cn.revoist.lifephoton.plugin.route.empty
+import cn.revoist.lifephoton.plugin.route.ok
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*

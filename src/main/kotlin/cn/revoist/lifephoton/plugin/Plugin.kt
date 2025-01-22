@@ -1,7 +1,6 @@
 package cn.revoist.lifephoton.plugin
 
 import cn.revoist.lifephoton.ktors.UserSession
-import cn.revoist.lifephoton.ktors.hasPlugin
 import cn.revoist.lifephoton.plugin.data.DataManager
 import cn.revoist.lifephoton.plugin.event.events.AuthenticationEvent
 import cn.revoist.lifephoton.plugin.event.events.PluginPageRequestEvent
@@ -67,11 +66,7 @@ abstract class Plugin {
 
     }
 
-    suspend fun isLogin(call:RoutingCall):Boolean{
-        val userCookie = call.sessions.get("user") ?: return false
-        val event = AuthenticationEvent(userCookie as UserSession,false).call() as AuthenticationEvent
-        return event.truth
-    }
+
 
     fun registerRoute(
         method: HttpMethod,

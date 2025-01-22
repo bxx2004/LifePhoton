@@ -2,12 +2,15 @@ package cn.revoist.lifephoton.extensions.auth.pages
 
 import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.extensions.auth.data.Tools
+import cn.revoist.lifephoton.ktors.UserSession
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.data.toPayloadResponse
 import cn.revoist.lifephoton.plugin.route.RoutePage
+import cn.revoist.lifephoton.plugin.route.error
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
 
 /**
  * @author 6hisea
@@ -23,11 +26,18 @@ object Profile :RoutePage("profile/{user}",true,true){
     override suspend fun onGet(call: RoutingCall) {
         val username = call.parameters["user"]
         if (username.isNullOrEmpty()){
-            call.error("You must enter a username")
+            call.error("Please enter a valid username")
+            return
+        }
+        if (username == "myself"){
+            val user = call.sessions.get("user")!! as UserSession
+            call.respond(Tools.findUserByToken(user.accessToken)!!.toPayloadResponse(
+                excludes = arrayListOf("password","accessToken","refreshToken")
+            ))
             return
         }
         val userEntity = Tools.getUser(username)?.toPayloadResponse(
-            excludes = arrayListOf("password","accessToken","refreshToken","permissions")
+             excludes = arrayListOf("password","accessToken","refreshToken")
         )
         if (userEntity == null){
             call.error("user is not exists")

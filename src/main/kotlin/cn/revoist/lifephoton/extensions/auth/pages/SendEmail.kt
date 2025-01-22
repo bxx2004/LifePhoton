@@ -4,6 +4,8 @@ import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.extensions.auth.data.Tools
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.route.RoutePage
+import cn.revoist.lifephoton.plugin.route.error
+import cn.revoist.lifephoton.plugin.route.message
 import cn.revoist.lifephoton.tools.submit
 import io.ktor.http.*
 import io.ktor.server.routing.*

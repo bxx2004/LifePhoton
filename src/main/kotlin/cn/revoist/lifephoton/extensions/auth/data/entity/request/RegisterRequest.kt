@@ -14,5 +14,6 @@ data class RegisterRequest(
     val email:String,
     val emailCode:String,
     val company:String,
-    val description:String
+    val description:String,
+    val avatar:String
 )

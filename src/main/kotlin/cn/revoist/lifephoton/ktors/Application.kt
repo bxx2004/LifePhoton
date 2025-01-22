@@ -2,14 +2,14 @@ package cn.revoist.lifephoton.ktors
 
 import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.plugin.Plugin
+import cn.revoist.lifephoton.plugin.getPlugins
+import cn.revoist.lifephoton.plugin.initPluginProvider
 
 import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 
-private val plugins = ArrayList<Plugin>()
-private lateinit var initServer:EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
 
 fun main(args: Array<String>) {
     val config = CommandLineConfig(args)
@@ -17,7 +17,7 @@ fun main(args: Array<String>) {
         takeFrom(config.engineConfig)
         loadConfiguration(config.rootConfig.environment.config)
     }
-    initServer = server
+    initPluginProvider(server)
     server.application.configure()
     Booster.pluginLoad()
     printInfo()
@@ -28,29 +28,14 @@ private fun printInfo() {
     info += "> meta\n"
     info += "  version: ${Booster.SYSTEM_VERSION},${Booster.VERSION}\n"
     info += "  author: Haixu Liu\n"
-    info += "> plugins (count: ${plugins.size})\n"
-    plugins.forEach {
+    info += "> plugins (count: ${getPlugins().size})\n"
+    getPlugins().forEach {
         info += "  ${it.name}[${it.id}] author:${it.author} version:${it.version}\n"
     }
     info += "===== Arksha Database Info =====\n"
-    initServer.application.log.info(info)
-}
-fun hasPlugin(id:String):Boolean{
-    return plugins.any { it.id == id }
+    println(info)
 }
 
-fun getPlugin(id:String):Plugin?{
-    return plugins.find { it.id == id }
-}
-
-fun usePlugin(plugin: Plugin) {
-    plugin.setApplication(initServer.application)
-    plugin.logger = initServer.application.log
-    plugins.add(plugin)
-    plugin.configure()
-    plugin.load()
-
-}
 
 fun Application.module() {
 

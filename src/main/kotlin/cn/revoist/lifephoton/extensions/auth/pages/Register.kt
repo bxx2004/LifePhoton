@@ -6,6 +6,8 @@ import cn.revoist.lifephoton.extensions.auth.data.entity.UserDataEntity
 import cn.revoist.lifephoton.extensions.auth.data.entity.request.RegisterRequest
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.route.RoutePage
+import cn.revoist.lifephoton.plugin.route.error
+import cn.revoist.lifephoton.plugin.route.message
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
@@ -24,6 +26,7 @@ object Register : RoutePage("register",false,false){
 
     override suspend fun onPost(call: RoutingCall) {
         val request = call.receive<RegisterRequest>()
+        emailCodeCache.remove(request.email)
         if (emailCodeCache[request.email] == request.emailCode) {
             if (!Tools.hasUser(request.username,request.email)){
                 val user = UserDataEntity{
@@ -36,6 +39,7 @@ object Register : RoutePage("register",false,false){
                         "company" to request.company,
                         "description" to request.description
                     )
+                    this.avatar = request.avatar
                 }
                 Tools.addUser(user)
                 call.message("user registered successfully")

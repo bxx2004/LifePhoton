@@ -3,6 +3,7 @@ package cn.revoist.lifephoton.ktors
 import cn.revoist.lifephoton.plugin.data.pool.Page
 import cn.revoist.lifephoton.plugin.event.events.AuthenticationEvent
 import cn.revoist.lifephoton.plugin.event.events.RootPageRequestEvent
+import cn.revoist.lifephoton.plugin.getPlugin
 import cn.revoist.lifephoton.plugin.route.ErrorResponse
 import com.google.gson.Gson
 import io.ktor.http.*

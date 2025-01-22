@@ -24,9 +24,11 @@ object FileManagement : Plugin(){
 
     override fun configure() {
         optional("path","/data/LifePhoton/file-management")
-        optional("count-limit",100)
-        optional("size-limit",500 * 1024)
-        optional("no-login-size-limit",10 * 1024)
+        optional("size-limit",524288000)
+        val path = File("/LifePhoton/data/file-management")
+        if (!path.exists()){
+            path.mkdirs()
+        }
     }
     override fun load() {
         val dir = File(option<String>("path"))
