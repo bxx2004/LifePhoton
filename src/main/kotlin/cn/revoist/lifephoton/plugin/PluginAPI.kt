@@ -7,6 +7,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
+import java.lang.reflect.Field
 
 private val plugins = ArrayList<Plugin>()
 private lateinit var initServer: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
@@ -45,6 +46,18 @@ suspend fun RoutingCall.isLogin():Boolean{
     val event = AuthenticationEvent(userCookie as UserSession,false).call() as AuthenticationEvent
     return event.truth
 }
-fun <T:PluginAPI>pluginApi(pluginId:String):T?{
-    return getPlugin(pluginId)?.api as T?
+fun Any.properties():List<Field>{
+    var clazz: Class<*>? = this::class.java
+    val fields = java.util.ArrayList<Field>()
+    while (clazz != null) {
+        fields.addAll(clazz.declaredFields)
+        clazz = clazz.superclass
+    }
+    fields.forEach {
+        it.isAccessible = true
+    }
+    return fields
+}
+fun Any.property(name:String): Field?{
+    return this.properties().find { it.name == name }
 }

@@ -11,4 +11,5 @@ object ResponseCode {
     const val OK = 1
     const val PAGE = 2
     const val WARN = 3
+    const val HIGH_ERROR = 4
 }

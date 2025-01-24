@@ -5,7 +5,7 @@ package cn.revoist.lifephoton.plugin.route
  * @date  2025/1/22 15:57
  * @description: None
  */
-annotation class Gateway(
+annotation class RouteContainer(
     val pluginId:String,
     val root: String
 )

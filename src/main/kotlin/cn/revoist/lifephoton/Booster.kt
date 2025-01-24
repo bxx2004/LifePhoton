@@ -4,8 +4,8 @@ import cn.revoist.lifephoton.plugin.Plugin
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.anno.AutoUse
 import cn.revoist.lifephoton.plugin.getPlugin
-import cn.revoist.lifephoton.plugin.route.Gateway
 import cn.revoist.lifephoton.plugin.route.Route
+import cn.revoist.lifephoton.plugin.route.RouteContainer
 import cn.revoist.lifephoton.plugin.route.RoutePage
 import cn.revoist.lifephoton.plugin.usePlugin
 import io.ktor.http.*
@@ -58,8 +58,8 @@ object Booster {
             }
         }
         //自动注册路由组
-        for (clazz in ref.getTypesAnnotatedWith(Gateway::class.java)) {
-            clazz.getAnnotation(Gateway::class.java)?.let { gateway->
+        for (clazz in ref.getTypesAnnotatedWith(RouteContainer::class.java)) {
+            clazz.getAnnotation(RouteContainer::class.java)?.let { gateway->
                 val instance = clazz.getField("INSTANCE").get(null)
                 val plugin = getPlugin(gateway.pluginId)
                 clazz.declaredMethods.filter {
