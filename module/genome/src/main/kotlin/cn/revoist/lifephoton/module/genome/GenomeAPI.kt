@@ -1,6 +1,9 @@
 package cn.revoist.lifephoton.module.genome
 
+import cn.revoist.lifephoton.module.genome.data.table.GenomeGeneAnnotationGO
+import cn.revoist.lifephoton.module.genome.data.table.GenomeGeneAnnotationKEGG
 import cn.revoist.lifephoton.module.genome.data.table.GenomeGeneAnnotationPfam
+import cn.revoist.lifephoton.module.genome.data.table.GenomeGeneAnnotationTf
 import org.ktorm.schema.Table
 
 /**
@@ -11,10 +14,10 @@ import org.ktorm.schema.Table
 object GenomeAPI {
     fun useAnnotationTables():List<Table<Nothing>>{
         return arrayListOf(
-            cn.revoist.lifephoton.module.genome.data.table.GenomeGeneAnnotationGO,
-            cn.revoist.lifephoton.module.genome.data.table.GenomeGeneAnnotationKEGG,
+            GenomeGeneAnnotationGO,
+            GenomeGeneAnnotationKEGG,
             GenomeGeneAnnotationPfam,
-            cn.revoist.lifephoton.module.genome.data.table.GenomeGeneAnnotationTf
+            GenomeGeneAnnotationTf
         )
     }
 }

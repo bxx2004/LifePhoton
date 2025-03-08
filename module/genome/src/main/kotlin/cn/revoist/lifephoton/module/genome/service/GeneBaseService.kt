@@ -69,7 +69,7 @@ object GeneBaseService {
                         it
                     )
             }
-        cache.forEach { _, u ->
+        cache.forEach { (_, u) ->
             response.add(u)
         }
         return response

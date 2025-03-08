@@ -1,14 +1,11 @@
 package cn.revoist.lifephoton.plugin
 
-import cn.revoist.lifephoton.ktors.UserSession
 import cn.revoist.lifephoton.plugin.data.sqltype.gson
-import cn.revoist.lifephoton.plugin.event.events.AuthenticationEvent
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
 import java.lang.reflect.Field
 
 private val plugins = ArrayList<Plugin>()
@@ -43,11 +40,7 @@ fun getPlugins():List<Plugin>{
 fun initPluginProvider(server:EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>){
     initServer = server
 }
-suspend fun RoutingCall.isLogin():Boolean{
-    val userCookie = sessions.get("user") ?: return false
-    val event = AuthenticationEvent(userCookie as UserSession,false).call() as AuthenticationEvent
-    return event.truth
-}
+
 fun Any.properties():List<Field>{
     var clazz: Class<*>? = this::class.java
     val fields = java.util.ArrayList<Field>()
@@ -63,6 +56,7 @@ fun Any.properties():List<Field>{
 fun Any.property(name:String): Field?{
     return this.properties().find { it.name == name }
 }
+
 suspend inline fun <T>RoutingCall.requestBody(clazz:Class<T>):T{
     return try {
         gson.fromJson(receiveText(),clazz)
@@ -70,4 +64,23 @@ suspend inline fun <T>RoutingCall.requestBody(clazz:Class<T>):T{
         clazz.getConstructor().newInstance()
         error("Request body is not valid")
     }
+}
+
+class CheckBuilder(private val validate:suspend RoutingCall.() -> Boolean,private val call:RoutingCall){
+    suspend fun then(func: suspend RoutingCall.()->Unit):CheckBuilder{
+        if (validate(call)){
+            func(call)
+        }
+        return this
+    }
+    suspend fun default(func: suspend RoutingCall.()->Unit):CheckBuilder{
+        if (!validate(call)){
+            func(call)
+        }
+        return this
+    }
+}
+
+suspend fun RoutingCall.match(func: suspend RoutingCall.()->Boolean):CheckBuilder{
+    return CheckBuilder(func,this)
 }

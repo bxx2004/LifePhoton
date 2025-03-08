@@ -20,6 +20,6 @@ object UserDataTable :Table<UserDataEntity>("user_data") {
     var permissions = obj<List<String>>("permissions").bindTo { it.permissions }
     var accessToken = varchar("access_token").bindTo { it.accessToken }
     var refreshToken = varchar("refresh_token").bindTo { it.refreshToken }
-    var data = obj<HashMap<String,Any>>("cn/revoist/lifephton/authentication/dataevoist/lifephton/authentication/data").bindTo { it.data }
+    var data = obj<HashMap<String,Any>>("data").bindTo { it.data }
     var avatar = varchar("avatar").bindTo { it.avatar }
 }

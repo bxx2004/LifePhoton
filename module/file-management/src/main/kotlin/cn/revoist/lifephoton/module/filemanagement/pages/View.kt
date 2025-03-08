@@ -1,9 +1,9 @@
 package cn.revoist.lifephoton.module.filemanagement.pages
 
 import cn.revoist.lifephoton.ktors.UserSession
+import cn.revoist.lifephoton.module.authentication.isLogin
 import cn.revoist.lifephoton.module.filemanagement.FileManagementAPI
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
-import cn.revoist.lifephoton.plugin.isLogin
 import cn.revoist.lifephoton.plugin.route.RoutePage
 import cn.revoist.lifephoton.plugin.route.error
 import io.ktor.http.*

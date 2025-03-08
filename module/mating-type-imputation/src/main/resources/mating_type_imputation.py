@@ -3,6 +3,7 @@ import sys
 import networkx as nx
 import itertools as it
 import matplotlib.pyplot as plt
+import json
 from tools import *
 
 if len(sys.argv) != 3:
@@ -21,7 +22,7 @@ if len(sys.argv) != 3:
 ####
 matingResFile=sys.argv[1]
 osResFile=sys.argv[2]
-outFile=sys.argv[1]+".output.txt"
+#outFile=sys.argv[1]+".output.txt"
 
 ####load mating result table
 monokaryonsMatingNumber = 0
@@ -90,6 +91,8 @@ for line in fIn:
 			osResList.append(strain2+"#"+strain1)
 fIn.close()
 
+result = {}
+
 ###add monokaryons mating result from dikaryon
 mnList = list(matingResDict.keys())
 for ind_i in range(0, len(mnList)-1):
@@ -129,17 +132,21 @@ for elem in matingNegResList:
 		missedOSList.append(elem)
 
 ###summary mating result matrix
-print("###########")
-print("summary mating result")
-print("the number of monokaryons: ", len(mnList))
-print("the number of mating info: ", monokaryonsMatingNumber)
-
-print("missed mating information: ", len(missedMatingList))
+#print("###########")
+#print("summary mating result")
+#print("the number of monokaryons: ", len(mnList))
+result["number_of_monokaryons"] = len(mnList)
+#print("the number of mating info: ", monokaryonsMatingNumber)
+result["number_of_mating_info"] = monokaryonsMatingNumber
+#print("missed mating information: ", len(missedMatingList))
+result["number_of_missed_mating_info"] = len(missedMatingList)
 for elem in missedMatingList:
 	print(elem)
 
-print("the number of OS exp info: ", len(osResList))
-print("missed OS exp: ", len(missedOSList))
+result["number_of_OS_exp_info"] = len(osResList)
+#print("the number of OS exp info: ", len(osResList))
+result["number_of_missed_OS_exp_info"] = len(missedOSList)
+#print("missed OS exp: ", len(missedOSList))
 for elme in missedOSList:
 	print(elem)
 
@@ -160,13 +167,20 @@ for ind in range(0, len(begList)):
 		typeGraph = addNode(typeGraph, mnName)
 
 ####select all-mating monokaryons
+result["pre-assign_mating_type"] = []
 for ind in range(0, len(mnList)):
 	mnName = mnList[ind]
-	print("#####")
-	print(mnName)
+	#print("#####")
+	#print(mnName)
 	if mnName in typeGraph.nodes():
-		print("Pre-assign mating type of ", typeGraph.nodes[mnName]["x"], " and ", typeGraph.nodes[mnName]["y"], " for ", mnName)
-		
+		result["pre-assign_mating_type"].append(
+			{
+				"mn_name": mnName,
+				"x": typeGraph.nodes[mnName]["x"],
+				"y": typeGraph.nodes[mnName]["y"]
+			}
+		)
+		#print("Pre-assign mating type of ", typeGraph.nodes[mnName]["x"], " and ", typeGraph.nodes[mnName]["y"], " for ", mnName)
 	else:
 		maxX, maxY = maxInd(typeGraph)
 		scoreDict = {}
@@ -205,18 +219,37 @@ for ind in range(0, len(mnList)):
 			unidentifiedList.append(mnName)
 
 ###print all-mating monokaryons
-print(typeGraph)
-#nx.draw(typeGraph)
+#print(typeGraph)
+#nx.draw(typeGraph,with_labels=True)
 #plt.show()
-
+result["mn_graph"] = {
+	"nodes":[],
+	"lines": []
+}
+for x in typeGraph.nodes:
+	result["mn_graph"]["nodes"].append({
+		"id": x,
+		"text": x,
+		"data": {
+			"x": typeGraph.nodes[x]["x"],
+			"y": typeGraph.nodes[x]["y"]
+		}
+	})
+result["mn_graph"]["rootId"] = result["mn_graph"]["nodes"][0]
+for x in typeGraph.edges:
+	result["mn_graph"]["lines"].append({
+		"from": x[0],
+		"to": x[1],
+		"lineShape": 1
+	})
 ###print non-all-mating monokaryons
-print(unidentifiedList)
+#print(unidentifiedList)
 
 ###include all possible mating-type informations for non-all-mating monokaryons
 for node in unidentifiedList:
 	maxX, maxY = maxInd(typeGraph)
-	print("########")
-	print(node)
+	#print("########")
+	#print(node)
 	scoreDict = {}
 	for x in range(1, maxX+2):
 		scoreDict[x] = {}
@@ -242,9 +275,32 @@ for node in unidentifiedList:
 		for nodeLast in nodeLastList:
 			#print(nodeLast)
 			typeGraph.add_edge(nodeLast, nodeName)
-			
-print(typeGraph)
+result["un_graph"] = {
+	"nodes":[],
+	"lines": []
+}
+for x in typeGraph.nodes:
+	result["un_graph"]["nodes"].append({
+		"id": x,
+		"text": x,
+		"data": {
+			"x": typeGraph.nodes[x]["x"],
+			"y": typeGraph.nodes[x]["y"],
+			"score": typeGraph.nodes[x]["score"] if "score" in typeGraph.nodes[x] else -1
+		}
+	})
+result["un_graph"]["rootId"] = result["un_graph"]["nodes"][0]
+for x in typeGraph.edges:
+	result["un_graph"]["lines"].append({
+		"from": x[0],
+		"to": x[1],
+		"lineShape": 1
+	})
+#print(typeGraph)
 #nx.draw(typeGraph, with_labels=True)
+#fig = plt.gcf()
+#fig.set_size_inches(18.5, 10.5)
+#fig.savefig('1.png', dpi=100)
 #plt.show()
 
 ###screen all possible mating-type combination and print all-right mating-type combinations 
@@ -254,9 +310,10 @@ out_degree_list = list(typeGraph.out_degree())
 nodeEndList = [node for node, degree in out_degree_list if degree == 0]
 
 totalScore = sum([len(matingResDict[x]) for x in matingResDict.keys() ])
-fOut = open(outFile, 'w')
+#fOut = open(outFile, 'w')
 numberTotal = 0
 numberFit = 0
+result["data"] = []
 for nodeBeg in nodeBegList:
 	for nodeEnd in nodeEndList:
 		for path in nx.all_simple_paths(typeGraph, source=nodeBeg, target=nodeEnd):
@@ -266,14 +323,27 @@ for nodeBeg in nodeBegList:
 				typeDict[node.split("_")[0]] = [typeGraph.nodes[node]["x"], typeGraph.nodes[node]["y"]]
 			score, message = matingScoreForAll(matingResDict, typeDict)	
 			if score == totalScore:
-				print("#########", totalScore, score, file=fOut)
+				#print("#########", totalScore, score, file=fOut)
+				result["score"] = score
+				result["total_score"] = totalScore
 				for node in path:
-					print(node, typeGraph.nodes[node]["x"], typeGraph.nodes[node]["y"], file=fOut)
+					result["data"].append({
+						"id": node,
+						"x": typeGraph.nodes[node]["x"],
+						"y": typeGraph.nodes[node]["y"]
+					})
+					#print(node, typeGraph.nodes[node]["x"], typeGraph.nodes[node]["y"], file=fOut)
 				numberFit += 1
 			numberTotal += 1
 			#print(path, totalScore, score, message, file=fOut)
-fOut.close()
-
-print("total number of mating-type combinations:", numberTotal)
-print("number of all-right mating-type combinations:", numberFit)
-print("all combinations were listed in", outFile)
+#fOut.close()
+result["total_number_of_mating-type_combinations"] = numberTotal
+result["total_number_of_all-right_mating-type_combinations"] = numberFit
+infoFile=sys.argv[1]+".output.json"
+infoOut = open(infoFile, 'w')
+infoOut.write(json.dumps(result,indent=4))
+infoOut.close()
+print("processor is finished.")
+#print("total number of mating-type combinations:", numberTotal)
+#print("number of all-right mating-type combinations:", numberFit)
+#print("all combinations were listed in", outFile)

@@ -1,6 +1,7 @@
 package cn.revoist.lifephoton.module.authentication.pages
 
 import cn.revoist.lifephoton.ktors.UserSession
+import cn.revoist.lifephoton.module.authentication.data.Tools
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.data.toPayloadResponse
 import cn.revoist.lifephoton.plugin.route.RoutePage
@@ -30,12 +31,12 @@ object Profile :RoutePage("profile/{user}",true,true){
         if (username == "myself"){
             val user = call.sessions.get("user")!! as UserSession
             call.respond(
-                cn.revoist.lifephoton.module.authentication.data.Tools.findUserByToken(user.accessToken)!!.toPayloadResponse(
+                Tools.findUserByToken(user.accessToken)!!.toPayloadResponse(
                 excludes = arrayListOf("password","accessToken","refreshToken")
             ))
             return
         }
-        val userEntity = cn.revoist.lifephoton.module.authentication.data.Tools.getUser(username)?.toPayloadResponse(
+        val userEntity = Tools.getUser(username)?.toPayloadResponse(
              excludes = arrayListOf("password","accessToken","refreshToken")
         )
         if (userEntity == null){

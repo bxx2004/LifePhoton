@@ -3,12 +3,13 @@ package cn.revoist.lifephoton.module.mti.pages
 import cn.revoist.lifephoton.module.filemanagement.FileManagementAPI
 import cn.revoist.lifephoton.module.mti.MatingTypeImputation
 import cn.revoist.lifephoton.module.mti.data.entity.request.ImputationRequest
-import cn.revoist.lifephoton.module.mti.data.entity.response.ImputationResponse
+import cn.revoist.lifephoton.plugin.data.sqltype.gson
 import cn.revoist.lifephoton.plugin.requestBody
 import cn.revoist.lifephoton.plugin.route.*
 import cn.revoist.lifephoton.plugin.route.Route
 import cn.revoist.lifephoton.tools.checkNotNull
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.internal.decodeStringToJsonTree
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
@@ -37,26 +38,9 @@ object Imputation {
         )
         process.waitFor()
         val bufferedReader = BufferedReader(InputStreamReader(process.inputStream))
-        val outFile = File(matingResultMatrixFile!!.absolutePath + ".output.txt")
+        val outFile = File(matingResultMatrixFile!!.absolutePath + ".output.json")
         if (outFile.exists() && outFile.length() > 0) {
-            val obj = ImputationResponse()
-            obj.result = ArrayList()
-            obj.title = ArrayList()
-            obj.log = bufferedReader.readLines()
-            outFile.readLines().forEachIndexed { index, s ->
-                if (index == 0){
-                    obj.title.addAll(s.split(" "))
-                }else{
-                    obj.result.add(
-                        hashMapOf(
-                            obj.title[0] to s.split(" ")[0],
-                            obj.title[1] to  s.split(" ")[1],
-                            obj.title[2] to  s.split(" ")[2]
-                        )
-                    )
-                }
-            }
-            call.ok(obj)
+            call.ok(gson.fromJson(outFile.readText(),Any::class.java))
         }else{
             call.error("结果未生成: ${bufferedReader.readText()}")
         }
