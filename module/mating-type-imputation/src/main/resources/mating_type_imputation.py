@@ -140,12 +140,14 @@ result["number_of_monokaryons"] = len(mnList)
 result["number_of_mating_info"] = monokaryonsMatingNumber
 #print("missed mating information: ", len(missedMatingList))
 result["number_of_missed_mating_info"] = len(missedMatingList)
+result["missed_mating_list"] = missedMatingList
 for elem in missedMatingList:
 	print(elem)
 
 result["number_of_OS_exp_info"] = len(osResList)
 #print("the number of OS exp info: ", len(osResList))
 result["number_of_missed_OS_exp_info"] = len(missedOSList)
+result["missed_OS_exp_list"] = missedOSList
 #print("missed OS exp: ", len(missedOSList))
 for elme in missedOSList:
 	print(elem)

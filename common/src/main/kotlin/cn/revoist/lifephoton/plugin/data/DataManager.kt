@@ -4,6 +4,7 @@ import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.plugin.Plugin
 import cn.revoist.lifephoton.plugin.data.pool.BufferPool
 import cn.revoist.lifephoton.plugin.data.pool.Page
+import cn.revoist.lifephoton.plugin.data.pool.TempMemoryContainer
 import cn.revoist.lifephoton.plugin.data.pool.splitPage
 import cn.revoist.lifephoton.plugin.route.PagingPayloadResponse
 import cn.revoist.lifephoton.plugin.route.PayloadResponse
@@ -22,6 +23,20 @@ class DataManager(val plugin:Plugin) {
     private val databases = ArrayList<Database>()
     private val bufferPool = BufferPool(plugin,plugin.id)
     private val pageBuffer = HashMap<String,List<Page>>()
+    private val pageCache = HashMap<String,String>()
+    private val tempContainer = arrayListOf<TempMemoryContainer<*>>()
+
+    init {
+        submit(-1,1000*60*60*6){
+            tempContainer.clear()
+        }
+    }
+
+    fun <T>useTempContainer():TempMemoryContainer<T>{
+        tempContainer.add(TempMemoryContainer<T>())
+        return tempContainer.last as TempMemoryContainer<T>
+    }
+
     fun useDatabase(dbName:String = plugin.id):Database{
         if (databases.map { it.name }.contains(dbName)) {
             return databases.find { it.name == dbName }!!
@@ -39,7 +54,7 @@ class DataManager(val plugin:Plugin) {
         return result
     }
     fun useDefaultDatabase():Database{
-        return Booster.database
+        return Booster.database!!
     }
     fun useTable(table:Table<*>,dbName:String = plugin.id){
         val db = databases.find { it.name == dbName }
@@ -71,11 +86,20 @@ class DataManager(val plugin:Plugin) {
         }
         return useBuffer(keyWithId, defaultFunc)
     }
-    fun usePagination(data:List<Any>,count:Int = 20,lock:Boolean = false):PagingPayloadResponse<*>{
+    fun usePaginationCache(uri:String):String?{
+        return pageCache[uri]
+    }
+    fun usePagination(data:List<Any>,count:Int = 20,lock:Boolean = false,cache:String = ""):PagingPayloadResponse<*>{
         val code = generateCode()
         val pages = splitPage(data,count,"${plugin.id}-${code}",lock)
         pageBuffer[code] = pages
+        if (cache.isNotEmpty()){
+            pageCache[cache] = code
+        }
         return pages[0].toResponse()
+    }
+    fun getPages(code:String):List<Page>?{
+        return pageBuffer[code]
     }
     fun getPage(code:String,num:Int):Page?{
         val page = pageBuffer[code]

@@ -7,7 +7,8 @@ def maxInd(typeGraph):
 		if typeGraph.nodes[node]["y"] > maxY:
 			maxY = typeGraph.nodes[node]["y"]
 	return maxX, maxY
-	
+
+#待查
 def matingScore(typeGraph, mnName, x, y, matingResDict, osResDict):
 	score = 0
 	message = ""

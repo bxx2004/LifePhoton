@@ -21,7 +21,7 @@ object FrontAPIPrinter {
             val header = if (mName.startsWith("get")) {
                 ""
             }else{
-                "request"
+                ""
             }
             var exp = "/**\n"
             exp += "    @description ${api?.description?:"Null"}\n"
@@ -42,8 +42,7 @@ object FrontAPIPrinter {
                 methods.forEach {
                     r+= "  $exp\n"
                     r+= "  async ${header}${wordToCase(mName)}$pa{\n"
-                    r+= "    let res = await requests.${it}WithResponse(`${path}`,params)\n"
-                    r+= "    return res.payload\n"
+                    r+= "    return await requests.${it}WithResponse(`${path}`,params)\n"
                     r+= "  },\n"
                 }
             }else{
@@ -51,8 +50,7 @@ object FrontAPIPrinter {
                 methods.forEach {
                     r+= "  $exp\n"
                     r+= "  async ${header}${wordToCase(mName)}(params){\n"
-                    r+= "    let res = await requests.${it}WithResponse(\"${path}\",params)\n"
-                    r+= "    return res.payload\n"
+                    r+= "    return await requests.${it}WithResponse(\"${path}\",params)\n"
                     r+= "  },\n"
                 }
             }

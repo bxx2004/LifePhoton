@@ -1,6 +1,5 @@
 package cn.revoist.lifephoton.module.authentication.pages
 
-import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.module.authentication.data.entity.UserDataEntity
 import cn.revoist.lifephoton.module.authentication.data.entity.request.RegisterRequest
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
@@ -25,8 +24,8 @@ object Register : RoutePage("register",false,false){
 
     override suspend fun onPost(call: RoutingCall) {
         val request = call.receive<RegisterRequest>()
-        emailCodeCache.remove(request.email)
         if (emailCodeCache[request.email] == request.emailCode) {
+            emailCodeCache.remove(request.email)
             if (!cn.revoist.lifephoton.module.authentication.data.Tools.hasUser(request.username,request.email)){
                 val user = UserDataEntity {
                     this.email = request.email

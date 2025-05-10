@@ -15,7 +15,7 @@ suspend inline fun RoutingCall.checkNotNull(vararg datas:Any?){
         return
     }
 }
-suspend inline fun RoutingCall.checkNotNull(requestBody:Any){
+suspend inline fun RoutingCall.checkRequest(requestBody:Any){
     for (property in requestBody.properties()) {
         if (property.get(requestBody) == null){
             error("Parameter ${property.name} must be not null.")

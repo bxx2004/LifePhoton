@@ -7,3 +7,7 @@ include("module:mating-type-imputation")
 include("tester")
 include("module:view-controller")
 findProject(":module:view-controller")?.name = "view-controller"
+include("module:funga")
+findProject(":module:funga")?.name = "funga"
+include("module:file-management-not-auth")
+findProject(":module:file-management-not-auth")?.name = "file-management-not-auth"

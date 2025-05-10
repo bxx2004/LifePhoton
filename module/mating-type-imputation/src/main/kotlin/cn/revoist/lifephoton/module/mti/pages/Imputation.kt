@@ -34,7 +34,7 @@ object Imputation {
         val matingResultMatrixFile = FileManagementAPI.findFileByIdentifier(request.matingResultMatrixFile)
         call.checkNotNull(osResultFile,matingResultMatrixFile)
         val process = Runtime.getRuntime().exec(
-            "python ${MatingTypeImputation.option<String>("exec")} ${matingResultMatrixFile!!.absolutePath} ${osResultFile!!.absolutePath}"
+            "python3 ${MatingTypeImputation.option<String>("exec")} ${matingResultMatrixFile!!.absolutePath} ${osResultFile!!.absolutePath}"
         )
         process.waitFor()
         val bufferedReader = BufferedReader(InputStreamReader(process.inputStream))
@@ -44,5 +44,6 @@ object Imputation {
         }else{
             call.error("结果未生成: ${bufferedReader.readText()}")
         }
+        println(bufferedReader.readText())
     }
 }

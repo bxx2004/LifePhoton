@@ -1,7 +1,4 @@
 package cn.revoist.lifephoton.plugin.route
-
-
-
 /**
  * @author 6hisea
  * @date  2025/1/8 12:54

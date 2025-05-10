@@ -19,7 +19,9 @@ fun <T:Any> BaseTable<*>.obj(name: String): Column<T> {
 val gson = Gson()
 class ObjectType<T : Any> : SqlType<T>(Types.VARCHAR, "ser_object") {
     override fun doGetResult(rs: ResultSet, index: Int): T? {
-
+        if (rs.getString(index) == null){
+            return null
+        }
         return gson.fromJson(rs.getString(index).toString(),Any::class.java) as T
     }
 

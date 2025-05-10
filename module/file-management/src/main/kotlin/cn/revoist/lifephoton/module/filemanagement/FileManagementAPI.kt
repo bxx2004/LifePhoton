@@ -17,4 +17,34 @@ object FileManagementAPI : PluginAPI{
         val target = dir.listFiles()!!.find { it.name.contains(identifier) }
         return target
     }
+    fun createStaticFileManager(plugin: Plugin):StaticFileManager{
+        return StaticFileManager(plugin.id)
+    }
+
+    class StaticFileManager(private val uniqueId:String){
+        fun putStaticFileWithTemp(p:String,func:(file:File)->Unit){
+            val file = File(FileManagement.option<String>("path") + "/static/$uniqueId/$p.tmp")
+            if (!file.parentFile.exists()){
+                file.parentFile.mkdirs()
+            }
+            if (!file.exists()){
+                file.createNewFile()
+            }
+            func(file)
+            file.renameTo(File(file.absolutePath.replace(".tmp","")))
+        }
+        fun putStaticFile(p:String,func:(file:File)->Unit){
+            val file = File(FileManagement.option<String>("path") + "/static/$uniqueId/$p")
+            if (!file.parentFile.exists()){
+                file.parentFile.mkdirs()
+            }
+            if (!file.exists()){
+                file.createNewFile()
+            }
+            func(file)
+        }
+        fun getStaticFile(p:String):File{
+            return File(FileManagement.option<String>("path") + "/static/$uniqueId/$p")
+        }
+    }
 }

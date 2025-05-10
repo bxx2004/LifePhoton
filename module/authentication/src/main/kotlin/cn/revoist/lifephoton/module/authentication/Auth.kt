@@ -5,6 +5,10 @@ import cn.revoist.lifephoton.plugin.Plugin
 import cn.revoist.lifephoton.plugin.anno.AutoUse
 import cn.revoist.lifephoton.plugin.event.events.AuthenticationEvent
 import cn.revoist.lifephoton.plugin.event.registerListener
+import cn.revoist.lifephoton.plugin.paging
+import cn.revoist.lifephoton.plugin.requestBody
+import cn.revoist.lifephoton.plugin.route.ok
+import io.ktor.http.*
 
 /**
  * @author 6hisea
@@ -21,7 +25,6 @@ object Auth :Plugin(){
         get() = "1"
 
     override fun load() {
-
         registerListener(AuthenticationEvent::class.java){
             if (cn.revoist.lifephoton.module.authentication.data.Tools.checkToken(it.user)){
                 it.truth = true

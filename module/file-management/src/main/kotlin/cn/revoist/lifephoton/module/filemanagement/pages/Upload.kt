@@ -1,6 +1,5 @@
 package cn.revoist.lifephoton.module.filemanagement.pages
 
-import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.ktors.UserSession
 import cn.revoist.lifephoton.module.authentication.isLogin
 import cn.revoist.lifephoton.module.filemanagement.FileManagement

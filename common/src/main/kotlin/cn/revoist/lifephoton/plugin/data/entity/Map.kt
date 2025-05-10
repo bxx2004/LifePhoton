@@ -7,5 +7,6 @@ package cn.revoist.lifephoton.plugin.data.entity
  */
 @Retention
 annotation class Map(
-    val colName: String = "&empty"
+    val colName: String = "&empty",
+    val convert: String = "&empty"
 )

@@ -1,6 +1,7 @@
 package cn.revoist.lifephoton.module.genome.pages
 
 import cn.revoist.lifephoton.module.genome.Genome
+import cn.revoist.lifephoton.module.genome.data.entity.request.GeneBasicRequest
 import cn.revoist.lifephoton.module.genome.data.entity.request.GeneInfoRequest
 import cn.revoist.lifephoton.module.genome.data.entity.request.GeneStructureRequest
 import cn.revoist.lifephoton.module.genome.data.table.GenomeGeneStructure
@@ -14,7 +15,6 @@ import org.ktorm.dsl.and
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.where
 import org.ktorm.schema.ColumnDeclaring
-
 /**
  * @author 6hisea
  * @date  2025/1/25 10:32
@@ -48,7 +48,7 @@ object GeneBase {
         ]
     )
     suspend fun getGeneSequenceByGeneId(call: RoutingCall){
-        val request = call.requestBody(cn.revoist.lifephoton.module.genome.data.entity.request.GeneBasicRequest::class.java)
+        val request = call.requestBody(GeneBasicRequest::class.java)
         call.ok(
             Genome.dataManager.useDefaultDatabase()
                 .maps(cn.revoist.lifephoton.module.genome.data.table.GenomeGeneSequence, cn.revoist.lifephoton.module.genome.data.table.GenomeGeneSequence.id){
@@ -61,7 +61,7 @@ object GeneBase {
                         if (request.assembledVersion != null){
                             conditions += cn.revoist.lifephoton.module.genome.data.table.GenomeGeneSequence.assembledVersion eq request.assembledVersion!!
                         }
-                        conditions.reduce { a, b -> a and b }
+                        conditions.reduce{ a, b -> a and b }
                     }
                 }
         )

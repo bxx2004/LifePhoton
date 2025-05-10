@@ -29,13 +29,18 @@ object Booster {
         startEngine(args)
     }
     var VERSION = "beta-1"
-    var DB_URL = "127.0.0.1:5432"
+    var DB_URL = "localhost:5432"
     var DB_NAME = "lifephoton"
     var DB_USERNAME = "postgres"
     var DB_PASSWORD = "123456"
 
-    val database = Database.connect("jdbc:postgresql://${DB_URL}/${DB_NAME}","org.postgresql.Driver",
-        DB_USERNAME, DB_PASSWORD)
+    val database = try {
+        Database.connect("jdbc:postgresql://${DB_URL}/${DB_NAME}","org.postgresql.Driver",
+            DB_USERNAME, DB_PASSWORD)
+    }catch (e:Exception){
+        e.printStackTrace()
+        null
+    }
     fun pluginLoad(){
         val mailer = mailerBuilder("smtp.qq.com",587,"no-replay-revoist@qq.com","nfxiwxpavjtvdjdh")
         MailerManager.defaultMailer = mailer

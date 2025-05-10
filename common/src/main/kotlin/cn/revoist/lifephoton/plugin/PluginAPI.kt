@@ -1,6 +1,8 @@
 package cn.revoist.lifephoton.plugin
 
+import cn.revoist.lifephoton.plugin.data.DataManager
 import cn.revoist.lifephoton.plugin.data.sqltype.gson
+import cn.revoist.lifephoton.plugin.route.ok
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -64,6 +66,22 @@ suspend inline fun <T>RoutingCall.requestBody(clazz:Class<T>):T{
         clazz.getConstructor().newInstance()
         error("Request body is not valid")
     }
+}
+suspend inline fun RoutingCall.pageSize():Int{
+    return (queryParameters["pageSize"]?:"20").toInt()
+}
+suspend fun RoutingCall.paging(manager:DataManager,data:List<Any>,lock:Boolean = false,cache:Boolean = true){
+    val res = if (cache){
+        val id = manager.usePaginationCache(request.uri)
+        if (id != null){
+            manager.getPage(id,1)?.toResponse()
+        }else{
+            manager.usePagination(data,pageSize(),lock,request.uri)
+        }
+    }else{
+        manager.usePagination(data,pageSize(),lock)
+    }
+    ok(res)
 }
 
 class CheckBuilder(private val validate:suspend RoutingCall.() -> Boolean,private val call:RoutingCall){
