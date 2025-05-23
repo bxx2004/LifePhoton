@@ -49,7 +49,11 @@ fun String.asSymbol(db:String):String{
             where { GeneTable.fungaId eq this@asSymbol }
         }.firstOrNull()
     if (r == null) return "Not Found Funga Id"
-    return (r["symbol"]?:(r["other_id"] as List<String>)[0]).toString()
+    var sym = r["symbol"]?:(r["other_id"] as List<String>)[0]
+    if (sym == "None"){
+        sym = (r["other_id"] as List<String>)[0]
+    }
+    return (sym).toString()
 }
 fun List<String>.asSymbol(db:String):Map<String,String>{
     if (isEmpty()) return hashMapOf()
