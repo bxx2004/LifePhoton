@@ -9,7 +9,6 @@ import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationFunGenes
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationPredictGenesRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationResultRequest
 import cn.revoist.lifephoton.module.funga.services.AnalysisService
-import cn.revoist.lifephoton.plugin.data.sqltype.gson
 import cn.revoist.lifephoton.plugin.requestBody
 import cn.revoist.lifephoton.plugin.route.*
 import cn.revoist.lifephoton.plugin.route.Route
