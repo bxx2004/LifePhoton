@@ -1,4 +1,5 @@
 import cn.revoist.lifephoton.ktors.startEngine
+import cn.revoist.lifephoton.module.funga.FungaPlugin
 import cn.revoist.lifephoton.tools.FrontAPIPrinter
 
 /**

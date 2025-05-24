@@ -19,6 +19,7 @@ repositories {
     mavenCentral()
     maven { url = uri("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-js-wrappers") }
 }
+
 subprojects {
     apply(plugin = "kotlin")
     apply(plugin = "io.ktor.plugin")
