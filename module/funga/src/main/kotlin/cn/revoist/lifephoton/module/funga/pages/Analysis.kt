@@ -5,16 +5,26 @@ import cn.revoist.lifephoton.module.authentication.getUser
 import cn.revoist.lifephoton.module.authentication.isLogin
 import cn.revoist.lifephoton.module.filemanagement.FileManagementAPI
 import cn.revoist.lifephoton.module.funga.FungaPlugin
+import cn.revoist.lifephoton.module.funga.data.entity.request.FuncGeneSortedRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationFunGenesRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationPredictGenesRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationResultRequest
+import cn.revoist.lifephoton.module.funga.data.table.GenePhenotypeTable
 import cn.revoist.lifephoton.module.funga.services.AnalysisService
+import cn.revoist.lifephoton.module.funga.tools.asFungaId
+import cn.revoist.lifephoton.module.funga.tools.asSymbol
+import cn.revoist.lifephoton.plugin.data.maps
 import cn.revoist.lifephoton.plugin.requestBody
 import cn.revoist.lifephoton.plugin.route.*
 import cn.revoist.lifephoton.plugin.route.Route
 import cn.revoist.lifephoton.tools.checkNotNull
 import com.google.gson.stream.JsonReader
 import io.ktor.server.routing.*
+import org.ktorm.dsl.eq
+import org.ktorm.dsl.from
+import org.ktorm.dsl.map
+import org.ktorm.dsl.select
+import org.ktorm.dsl.where
 import java.io.FileReader
 
 
@@ -71,5 +81,24 @@ object Analysis {
         call.ok(
             AnalysisService.isReadyImputation(id!!)
         )
+    }
+    @Route(POST)
+    suspend fun sortedGene(call: RoutingCall){
+        val request = call.requestBody(FuncGeneSortedRequest::class.java)
+        val db = request.dbs()[0]
+        val genes = hashMapOf<String, List<String>>()
+        request.genes.asFungaId(db).forEach {
+            genes[it.asSymbol(db)] =
+                FungaPlugin.dataManager.useDatabase(db).from(
+                    GenePhenotypeTable
+                ).select(GenePhenotypeTable.phenotype).where {
+                    GenePhenotypeTable.gene eq it
+                }.map {
+                    it.get(GenePhenotypeTable.phenotype).toString()
+                }
+        }
+        call.ok(AnalysisService.funcGeneSort(
+            genes,request.phenotype,db
+        ))
     }
 }

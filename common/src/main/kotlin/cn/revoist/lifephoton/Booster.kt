@@ -29,10 +29,10 @@ object Booster {
         startEngine(args)
     }
     var VERSION = "beta-1"
-    var DB_URL = "localhost:5432"
+    var DB_URL = "1Panel-postgresql-Sjm3:5432"
     var DB_NAME = "lifephoton"
-    var DB_USERNAME = "postgres"
-    var DB_PASSWORD = "123456"
+    var DB_USERNAME = "liuhaixu"
+    var DB_PASSWORD = "lhx2004."
 
     val database = try {
         Database.connect("jdbc:postgresql://${DB_URL}/${DB_NAME}","org.postgresql.Driver",

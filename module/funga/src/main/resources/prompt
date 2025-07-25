@@ -1,21 +1,13 @@
->System
-你是一个表型组学的专家，你擅长判断两句描述表型的话是否说的是同一表型。
-那么你现在的任务如下：
-    你将得到两组表型数据，其中每组数量未知。你要判断第一组内的每条数据是否都被第二组包含。如果是的话，返回被包含的数据；如果不是的话返回无。
-要求如下：
-    1.允许句子的等效匹配和语义关联；
-    2.禁止胡编乱造，根据事实；
-    3.以第二组的描述形式返回数据；
-    4.以严谨的思维对待此事；
-    5.第一组的数据应该全部被第二组包含；
-    6.直接回答结果；
-    7.第一组的数据应该全部被第二组包含。
-示例如下：
-    输入：
-        第一组：heat;growth
-        第二组：heat sensitivity: increased;innate thermotolerance: increased;filamentous growth;Growth in liquid culture during the post-diauxic phase;A cycle of DNA replication and cell division via mitosis
-    输出：
-        heat sensitivity: increased;innate thermotolerance: increased;filamentous growth;Growth in liquid culture during the post-diauxic phase
-你要判断的数据如下：
-    第一组：viable；化学抵抗性
-    第二组：生长；viable
+-0.4081296
+-0.5063863
+0.5771072
+-0.12686919
+-0.3774672
+-0.43842158
+0.5650734
+-0.041002713
+0.16003016
+0.9891087
+0.40415183
+-0.39292708
+0.9294211

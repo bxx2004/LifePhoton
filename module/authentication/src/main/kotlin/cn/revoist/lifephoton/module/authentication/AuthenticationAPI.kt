@@ -39,7 +39,7 @@ suspend fun UserDataEntity.sendEmail(title:String, content:String){
 }
 suspend fun UserDataEntity.sendEmailNotice(title:String, content:String){
     emailBuilder {
-        from("长春市锐沃科技有限公司","no-replay-revoist@qq.com")
+        from("Changchun Revo Technology Co., Ltd","no-replay-revoist@qq.com")
         to(email)
         withSubject(title)
         withHTMLText(content)
@@ -53,7 +53,7 @@ fun analysisTemplate(title: String,username:String,taskId:String,startDate:Strin
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>长春市锐沃科技有限公司-分析结果</title>
+    <title>Changchun Revo Technology Co., Ltd | Analysis Result</title>
     <style type="text/css">
         /* 客户端特定重置 */
         body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
@@ -137,7 +137,7 @@ fun analysisTemplate(title: String,username:String,taskId:String,startDate:Strin
                     <!-- 页眉 -->
                     <tr>
                         <td class="header">
-                            <img src="https://via.placeholder.com/150x50/4a6fa5/ffffff?text=Company+Logo" alt="长春市锐沃科技有限公司" class="logo" />
+                            <img src="http://www.revoist.cn/upload/images/2025/6/Pasted-20250630-134446_preview_rev_1.png" alt="Changchun Revo Technology Co., Ltd" class="logo" />
                             <h1 style="margin: 0; font-size: 24px;">${title}</h1>
                         </td>
                     </tr>
@@ -145,38 +145,38 @@ fun analysisTemplate(title: String,username:String,taskId:String,startDate:Strin
                     <!-- 内容区 -->
                     <tr>
                         <td class="content">
-                            <h2 style="margin-top: 0;">尊敬的${username}, 您好!</h2>
+                            <h2 style="margin-top: 0;">Dear ${username}, Hello!</h2>
                             
-                            <p>感谢您使用我们的服务，您使用FUNGA平台的分析结果如下，请仔细阅读以下内容：</p>
-                            
-                            <div class="divider"></div>
-                            
-                            <p><strong>任务标识：</strong> ${taskId}</p>
-                            <p><strong>开始时间：</strong> ${startDate}</p>
-                            <p><strong>完成时间：</strong> ${endDate}</p>
+                            <p>Thank you for using our services. The analysis results of your use of the FUNGA platform are as follows. Please read the following carefully:</p>
                             
                             <div class="divider"></div>
                             
-                            <p>如需查看分析结果，请点击下方按钮前往：</p>
+                            <p><strong>Task Id：</strong> ${taskId}</p>
+                            <p><strong>Start time：</strong> ${startDate}</p>
+                            <p><strong>End time：</strong> ${endDate}</p>
                             
-                            <a href="${url}" class="button">查看详情</a>
+                            <div class="divider"></div>
                             
-                            <p>如果您有任何疑问，请随时联系我们的客服团队。</p>
+                            <p>To view the analysis results, please click the button below to go to:</p>
                             
-                            <p>祝您使用愉快！</p>
+                            <a href="${url}" class="button">View details</a>
                             
-                            <p><strong>长春市锐沃科技有限公司</strong></p>
+                            <p>If you have any questions, please feel free to contact our customer service team.</p>
+                            
+                            <p>Enjoy your use!</p>
+                            
+                            <p><strong>Changchun Revo Technology Co., Ltd</strong></p>
                         </td>
                     </tr>
                     
                     <!-- 页脚 -->
                     <tr>
                         <td class="footer">
-                            <p>© 2024 - 2025 长春市锐沃科技有限公司. 保留所有权利。</p>
+                            <p>© 2024 - 2026 Changchun Revo Technology Co., Ltd. All rights reserved。</p>
                             <p>
-                                <a href="#" style="color: #4a6fa5; text-decoration: none;">隐私政策</a> | 
-                                <a href="#" style="color: #4a6fa5; text-decoration: none;">服务条款</a> | 
-                                <a href="#" style="color: #4a6fa5; text-decoration: none;">联系我们</a>
+                                <a href="#" style="color: #4a6fa5; text-decoration: none;">Privacy policy</a> | 
+                                <a href="#" style="color: #4a6fa5; text-decoration: none;">Terms of service</a> | 
+                                <a href="#" style="color: #4a6fa5; text-decoration: none;">Contact us</a>
                             </p>
                         </td>
                     </tr>

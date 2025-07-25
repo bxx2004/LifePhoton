@@ -1,5 +1,6 @@
 package cn.revoist.lifephoton.module.funga.data.entity.inneral
 
+import cn.revoist.lifephoton.module.funga.data.entity.response.PhenotypeReferences
 import cn.revoist.lifephoton.module.funga.data.table.type.Source
 
 /**
@@ -13,7 +14,6 @@ class AnalysisResult {
     lateinit var func:List<SearchContainer<List<FuncGene>>>
     lateinit var predict:List<SearchContainer<PredictGene>>
     lateinit var graph:List<SearchContainer<List<InteractionGene>>>
-    lateinit var discussion:String
 }
 class Input{
     lateinit var phenotypes:List<String>
@@ -22,7 +22,7 @@ class Input{
 }
 class FuncGene{
     lateinit var gene:String
-    lateinit var phenotypes:List<String>
+    lateinit var phenotypes:List<PhenotypeReferences>
 }
 class PredictGene{
     lateinit var genes:HashMap<String,Int>

@@ -10,4 +10,5 @@ class ImputationResultRequest :WithDatabasesRequest(){
     lateinit var type:String
     var genes:List<String> = emptyList()
     var degree:Int = 0
+    var prompt:String = ""
 }

@@ -7,6 +7,8 @@ import cn.revoist.lifephoton.plugin.data.mapsWithColumn
 import cn.revoist.lifephoton.plugin.data.processor.MergeData
 import org.ktorm.dsl.*
 
+val symbolMapCache = hashMapOf<String, HashMap<String, String>>()
+val fungaIdMapCache = hashMapOf<String, HashMap<String, String>>()
 /**
  * @author 6hisea
  * @date  2025/4/13 11:33
@@ -21,14 +23,29 @@ fun Query.whereGene(
 }
 
 fun String.asFungaId(db:String):String{
-    val r =  FungaPlugin.dataManager.useDatabase(db)
-        .maps(GeneTable,GeneTable.id){
-            whereGene(this@asFungaId)
-        }.filter {
-            it["funga_id"] == this@asFungaId || it["symbol"] == this@asFungaId || (it["other_id"] as List<String>).contains(this@asFungaId)
-        }.firstOrNull()
-    if (r == null) return "Not Found Funga Id"
-    return r["funga_id"].toString()
+    if (fungaIdMapCache.contains(db)){
+        if (fungaIdMapCache[db]!!.contains(this)){
+            return fungaIdMapCache[db]!![this]!!
+        }
+    }
+    if (!fungaIdMapCache.contains(db)){
+        fungaIdMapCache[db] = hashMapOf()
+    }
+    if (!fungaIdMapCache[db]!!.contains(this)){
+        val r = FungaPlugin.dataManager.useDatabase(db)
+            .maps(GeneTable, GeneTable.id) {
+                whereGene(this@asFungaId)
+            }.firstOrNull {
+                it["funga_id"] == this@asFungaId || it["symbol"] == this@asFungaId || (it["other_id"] as List<String>).contains(
+                    this@asFungaId
+                )
+            }
+        if (r == null) return this
+        fungaIdMapCache[db]!![this] = r["funga_id"] as String
+    }
+
+
+    return fungaIdMapCache[db]!![this]!!
 }
 fun List<String>.asFungaId(db:String):List<String>{
     if (isEmpty()) return arrayListOf()
@@ -43,30 +60,47 @@ fun List<String>.asFungaId(db:String):List<String>{
 }
 
 fun String.asSymbol(db:String):String{
-    if (isEmpty()) return "Not Found Funga Id"
-    val r =  FungaPlugin.dataManager.useDatabase(db)
-        .maps(GeneTable,GeneTable.id){
-            where { GeneTable.fungaId eq this@asSymbol }
-        }.firstOrNull()
-    if (r == null) return "Not Found Funga Id"
-    var sym = r["symbol"]?:(r["other_id"] as List<String>)[0]
-    if (sym == "None"){
-        sym = (r["other_id"] as List<String>)[0]
-    }
-    return (sym).toString()
-}
-fun List<String>.asSymbol(db:String):Map<String,String>{
-    if (isEmpty()) return hashMapOf()
-    val result = hashMapOf<String,String>()
-    FungaPlugin.dataManager.useDatabase(db)
-        .maps(GeneTable,GeneTable.id){
-            where { GeneTable.fungaId inList this@asSymbol }
-        }.forEach {
-            result[it["funga_id"].toString()]= (it["symbol"]?:(it["other_id"] as List<String>)[0]).toString()
-            if (result[it["funga_id"].toString()] == "None"){
-                result[it["funga_id"].toString()] = (it["other_id"] as List<String>)[0].toString()
-            }
+    if (isEmpty()) return this
+    if (symbolMapCache.contains(db)){
+        if (symbolMapCache[db]!!.contains(this)){
+            return symbolMapCache[db]!![this]!!
         }
+    }
+    if (!symbolMapCache.contains(db)){
+        symbolMapCache[db] = hashMapOf()
+    }
+    if (!symbolMapCache[db]!!.contains(this)){
+        val r =  FungaPlugin.dataManager.useDatabase(db)
+            .maps(GeneTable,GeneTable.id){
+                where { GeneTable.fungaId eq this@asSymbol }
+            }.firstOrNull()
+        if (r == null) return this
+        var sym = r["symbol"]?:(r["other_id"] as List<String>)[0]
+        if (sym == "None"){
+            sym = (r["other_id"] as List<String>)[0]
+        }
+        symbolMapCache[db]!![this] = sym.toString()
+    }
+
+    return (symbolMapCache[db]!![this]).toString()
+}
+fun List<String>.asSymbol(db: String): Map<String, String> {
+    if (isEmpty()) return hashMapOf()
+    val result = hashMapOf<String, String>()
+    val batchSize = 50000 // 选择一个小于65535的值，确保安全
+
+    // 将列表分成多个批次处理
+    this.chunked(batchSize).forEach { batch ->
+        FungaPlugin.dataManager.useDatabase(db)
+            .maps(GeneTable, GeneTable.id) {
+                where { GeneTable.fungaId inList batch }
+            }.forEach {
+                result[it["funga_id"].toString()] = (it["symbol"] ?: (it["other_id"] as List<String>)[0]).toString()
+                if (result[it["funga_id"].toString()] == "None") {
+                    result[it["funga_id"].toString()] = (it["other_id"] as List<String>)[0].toString()
+                }
+            }
+    }
     return result
 }
 

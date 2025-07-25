@@ -3,10 +3,21 @@ package cn.revoist.lifephoton.module.funga.data.core
 import cn.revoist.lifephoton.module.funga.FungaPlugin
 import cn.revoist.lifephoton.module.funga.ai.embedding.SentencesEmbedding
 import cn.revoist.lifephoton.module.funga.data.table.*
+import cn.revoist.lifephoton.plugin.data.entity.Index
+import cn.revoist.lifephoton.plugin.data.json.JSONObject
+import cn.revoist.lifephoton.plugin.data.json.jsonObject
 import cn.revoist.lifephoton.plugin.data.maps
 import cn.revoist.lifephoton.plugin.data.processor.MergeData
 import cn.revoist.lifephoton.plugin.data.processor.join
 import cn.revoist.lifephoton.plugin.data.sqltype.ObjectType
+import cn.revoist.lifephoton.plugin.data.sqltype.gson
+import cn.revoist.lifephoton.plugin.properties
+import com.google.common.collect.Lists
+import com.google.gson.JsonObject
+import io.milvus.orm.iterator.QueryIterator
+import io.milvus.param.R
+import io.milvus.param.dml.QueryIteratorParam
+import io.milvus.response.QueryResultsWrapper
 import io.milvus.v2.client.ConnectConfig
 import io.milvus.v2.client.MilvusClientV2
 import io.milvus.v2.common.DataType
@@ -17,12 +28,20 @@ import io.milvus.v2.service.collection.request.HasCollectionReq
 import io.milvus.v2.service.index.request.CreateIndexReq
 import io.milvus.v2.service.vector.request.AnnSearchReq
 import io.milvus.v2.service.vector.request.HybridSearchReq
+import io.milvus.v2.service.vector.request.InsertReq
+import io.milvus.v2.service.vector.request.QueryIteratorReq
 import io.milvus.v2.service.vector.request.data.BaseVector
 import io.milvus.v2.service.vector.request.data.FloatVec
 import io.milvus.v2.service.vector.request.ranker.WeightedRanker
+import org.ktorm.entity.Entity
 import org.ktorm.schema.Table
 import org.ktorm.schema.VarcharSqlType
+import java.io.File
+import java.io.IOException
+import java.nio.file.StandardOpenOption
 import java.util.*
+import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.jvm.kotlinProperty
 
 /**
  * @author 6hisea
@@ -36,7 +55,7 @@ object MilvusDatabase {
         .password(FungaPlugin.option("milvus-password"))
         .token(FungaPlugin.option("milvus-token"))
         .build()
-    private lateinit var client:MilvusClientV2
+    lateinit var client:MilvusClientV2
 
     fun init(){
         client = MilvusClientV2(config)
@@ -48,7 +67,7 @@ object MilvusDatabase {
         onlineDBs.forEach {
             GenePhenotypeTable.createMilvusDatabaseIfNotExists(it,arrayListOf("phenotype"))
             PhenotypeOntologyTable.createMilvusDatabaseIfNotExists(it,arrayListOf("description"))
-            GeneTable.createMilvusDatabaseIfNotExists(it,arrayListOf("dna_sequence","polypeptide_sequence","description"))
+            GeneTable.createMilvusDatabaseIfNotExists(it,arrayListOf("description"))
             PhenotypeOntologyQualifierTable.createMilvusDatabaseIfNotExists(it,arrayListOf("description"))
 
         }
@@ -115,6 +134,61 @@ object MilvusDatabase {
         }
         return map
     }
+
+    fun Table<*>.insert(dbName: String, entities: List<Any>){
+        val result = arrayListOf<JsonObject>()
+        entities.forEach {entity->
+            val obj = JsonObject()
+            entity.properties().forEach {
+                if (it.name != "id"){
+                    if (it.get(entity) is List<*>){
+                        obj.add(it.name,gson.toJsonTree(it.get(entity)))
+                    }else if (it.get(entity) is JSONObject){
+                        obj.add(it.name,gson.toJsonTree(it.get(entity)))
+                    }else{
+                        if (it.get(entity) == null){
+                            obj.addProperty(it.name,"-")
+                        }else{
+                            obj.addProperty(it.name,it.get(entity).toString())
+                        }
+                    }
+                    if(it.kotlinProperty?.hasAnnotation<Index>() == true){
+                        obj.add(it.name+"_vector",gson.toJsonTree(SentencesEmbedding.embedding(it.get(entity).toString())))
+                    }
+                }
+            }
+            result.add(obj)
+        }
+        client.insert(
+            InsertReq.builder().collectionName(dbName+ "_" +tableName).data(result).build()
+        )
+    }
+
+    fun Table<*>.insert(dbName: String, entity: Any){
+        val obj = JsonObject()
+        entity.properties().forEach {
+            if (it.name != "id"){
+                if (it.get(entity) is List<*>){
+                    obj.add(it.name,gson.toJsonTree(it.get(entity)))
+                }else if (it.get(entity) is JSONObject){
+                    obj.add(it.name,gson.toJsonTree(it.get(entity)))
+                }else{
+                    if (it.get(entity) == null){
+                        obj.addProperty(it.name,"-")
+                    }else{
+                        obj.addProperty(it.name,it.get(entity).toString())
+                    }
+                }
+                if(it.kotlinProperty?.hasAnnotation<Index>() == true){
+                    obj.add(it.name+"_vector",gson.toJsonTree(SentencesEmbedding.embedding(it.get(entity).toString())))
+                }
+            }
+        }
+        client.insert(
+            InsertReq.builder().collectionName(dbName+ "_" +tableName).data(Collections.singletonList(obj)).build()
+        )
+    }
+
     fun Table<*>.createMilvusDatabaseIfNotExists(dbName: String, vector_name: List<String>){
         var schema = client.createSchema()
         vector_name.forEach {
@@ -143,5 +217,34 @@ object MilvusDatabase {
         return join(dbName){
             search(it,tableName,sentences,topK)
         }
+    }
+    fun Table<*>.saveVectorData(dbName: String,dir: String){
+        val data = arrayListOf<JSONObject>()
+        val queryIterator = client.queryIterator(QueryIteratorReq.builder()
+        .collectionName(dbName+"_"+tableName)
+        .outputFields(Lists.newArrayList("*"))
+        .batchSize(50L)
+        .build())
+        while (true) {
+            val res = queryIterator.next()
+            if (res.isEmpty()) {
+                queryIterator.close();
+                break;
+            }
+            for (record in res) {
+                data.add(
+                    jsonObject {
+                        record.fieldValues.forEach { t, u ->
+                            put(t,u)
+                        }
+                    }
+                )
+            }
+        }
+        val file = File(dir + "${dbName}_$tableName.json")
+        if (file.exists()) {
+            file.createNewFile()
+        }
+        file.writeText(gson.toJson(data))
     }
 }

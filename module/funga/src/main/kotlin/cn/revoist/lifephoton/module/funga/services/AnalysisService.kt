@@ -6,9 +6,11 @@ import cn.revoist.lifephoton.module.authentication.sendEmail
 import cn.revoist.lifephoton.module.authentication.sendEmailNotice
 import cn.revoist.lifephoton.module.filemanagement.FileManagementAPI
 import cn.revoist.lifephoton.module.funga.FungaPlugin
-import cn.revoist.lifephoton.module.funga.ai.chat.AnalysisAssistant
-import cn.revoist.lifephoton.module.funga.ai.chat.ChatAssistant
+import cn.revoist.lifephoton.module.funga.ai.assistant.AnalysisAssistant
+import cn.revoist.lifephoton.module.funga.ai.assistant.PaperAssistant
+import cn.revoist.lifephoton.module.funga.ai.assistant.SortAssistant
 import cn.revoist.lifephoton.module.funga.data.core.MilvusDatabase.search
+import cn.revoist.lifephoton.module.funga.data.entity.ai.SortedGeneResult
 import cn.revoist.lifephoton.module.funga.data.entity.inneral.AnalysisResult
 import cn.revoist.lifephoton.module.funga.data.entity.inneral.PredictGene
 import cn.revoist.lifephoton.module.funga.data.entity.inneral.SearchContainer
@@ -18,6 +20,7 @@ import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationFunGenes
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationPredictGenesRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationResultRequest
 import cn.revoist.lifephoton.module.funga.data.entity.response.FuncGeneResponse
+import cn.revoist.lifephoton.module.funga.data.entity.response.PhenotypeReferences
 import cn.revoist.lifephoton.module.funga.data.entity.response.PredictGeneResponse
 import cn.revoist.lifephoton.module.funga.data.table.GeneInteractionTable
 import cn.revoist.lifephoton.module.funga.data.table.GenePhenotypeTable
@@ -29,6 +32,7 @@ import cn.revoist.lifephoton.plugin.data.processor.MergeData
 import cn.revoist.lifephoton.plugin.data.processor.join
 import cn.revoist.lifephoton.plugin.data.sqltype.gson
 import cn.revoist.lifephoton.tools.submit
+import com.google.gson.JsonArray
 import com.google.gson.stream.JsonReader
 import kotlinx.coroutines.runBlocking
 import org.ktorm.dsl.*
@@ -42,7 +46,7 @@ import kotlin.random.Random
  * @description: None
  */
 object AnalysisService {
-    val fileManager = FileManagementAPI.createStaticFileManager(FungaPlugin)
+    val fileManager = FileManagementAPI.createStaticFileManager(FungaPlugin,"analysis")
     val tempContainer = FungaPlugin.dataManager.useTempContainer<AnalysisResult>()
     fun nohupImputationFunGenes(request: ImputationFunGenesRequest,user:UserDataEntity?): String {
         val id = (System.currentTimeMillis() + Random(1000).nextInt()).toString()
@@ -78,21 +82,14 @@ object AnalysisService {
                     "predict" to predictGenes,
                     "graph" to GeneService.getInteractionsByGeneList(req),
                 )
-                data["discussion"] = try {
-                    ChatAssistant.INSTANCE.generateDiscretion(gson.toJson(data))
-                }catch (e:Exception){
-                    "无"
-                }
                 fileManager.putStaticFileWithTemp(id){
-                    it.writeText(
-                        gson.toJson(data)
-                    )
+                    it.writeText(gson.toJson(data))
                 }
                 val endDate = Date().toString()
                 if (user != null){
                     runBlocking {
-                        user.sendEmailNotice("【FUNGA-Analysis】您的分析已经完成",analysisTemplate(
-                            "【FUNGA-Analysis】您的分析已经完成",
+                        user.sendEmailNotice("【FUNGA-Analysis】Your analysis has been completed",analysisTemplate(
+                            "【FUNGA-Analysis】Your analysis has been completed",
                             user.username,
                             id,
                             startDate,
@@ -117,28 +114,48 @@ object AnalysisService {
             val phenotypes = HashMap<String,List<String>>()
 
             val funcGenes = arrayListOf<FuncGeneResponse>()
-            ids.forEach {
-                phenotypes[it] = FungaPlugin.dataManager.useDatabase(db)
-                    .mapsWithColumn(GenePhenotypeTable,GenePhenotypeTable.phenotype){
-                        where {
-                            GenePhenotypeTable.gene eq it
-                        }
-                    }.map {
-                        it["phenotype"].toString()
+
+            FungaPlugin.dataManager.useDatabase(db)
+                .mapsWithColumn(GenePhenotypeTable, GenePhenotypeTable.gene, GenePhenotypeTable.phenotype){
+                    where {
+                        GenePhenotypeTable.gene inList ids
                     }
-            }
+                }.forEach {
+                    if (!phenotypes.containsKey(it["gene"])){
+                        phenotypes[it["gene"].toString()] = arrayListOf()
+                    }
+                    (phenotypes[it["gene"].toString()] as ArrayList<String>).add(it["phenotype"].toString())
+                }
             phenotypes.forEach {gene,ps->
                 var ppp = ps
+                //尝试新逻辑能否实现。
+                //大量提示词一起发送。
+                //判断Token长度
                 //检验一下是否相关
-                val isRelated = if (request.type == "union"){
-                    ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAny(request.phenotypes,ps).filter { it != "无" }
-                    ppp.isNotEmpty()
-                }else{
-                    ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAll(request.phenotypes,ps)
-                    ppp.filter { it != "无" }.isNotEmpty() && !ppp.contains("无")
-                }
-                if(isRelated){
-                    funcGenes.add(FuncGeneResponse(gene.asSymbol(db),ppp))
+
+                //输出推理过程，优化页面web
+                try {
+                    val isRelated = if (request.type == "union"){
+                        ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAny(request.phenotypes,ps).filter { it != "无" }
+                        ppp.isNotEmpty()
+                    }else{
+                        ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAll(request.phenotypes,ps)
+                        ppp.filter { it != "无" }.isNotEmpty() && !ppp.contains("无")
+                    }
+                    if(isRelated){
+                        val result = FungaPlugin.dataManager.useDatabase(db)
+                            .mapsWithColumn(GenePhenotypeTable, GenePhenotypeTable.phenotype,GenePhenotypeTable.references){
+                                where {
+                                    GenePhenotypeTable.gene eq gene and (GenePhenotypeTable.phenotype inList ppp)
+                                }
+                            }.map {
+                                PhenotypeReferences(it["phenotype"].toString(),(it["references"] as List<String>).distinct())
+                            }
+                        funcGenes.add(FuncGeneResponse(gene.asSymbol(db),result))
+                    }
+                }catch (e:Exception){
+                    println("检查异常")
+                    e.printStackTrace()
                 }
             }
             funcGenes
@@ -149,35 +166,56 @@ object AnalysisService {
             GeneService.getInteractionsByPGR(findInteractions(db,request,currentDegree),db)
         }
     }
-    private fun findInteractions(db:String,request:ImputationPredictGenesRequest,currentDegree: Int): PredictGeneResponse {
+    private fun findInteractions(db: String, request: ImputationPredictGenesRequest, currentDegree: Int): PredictGeneResponse {
         if (request.genes.isEmpty()) return PredictGeneResponse()
+
         val genes = request.genes.asFungaId(db)
         val geneList = request.geneList.asFungaId(db)
+
         val dg1 = PredictGeneResponse()
-        dg1[currentDegree] = FungaPlugin.dataManager.useDatabase(db)
-            .bind(GeneInteractionTable,GeneInteractionMapper::class.java){
-                select(GeneInteractionTable.gene1,GeneInteractionTable.gene2)
-                    .where {
-                        ((GeneInteractionTable.gene1 inList geneList) and (GeneInteractionTable.gene2 inList geneList)) and ((GeneInteractionTable.gene1 inList genes) or (GeneInteractionTable.gene2 inList genes))
-                    }
-            }.map {
-                if (it.gene1 in request.genes){
-                    it.gene2
-                }else{
-                    it.gene1
-                }
+
+        // 分批处理大列表
+        val batchSize = 10000
+        val resultSet = mutableSetOf<String>()
+
+        // 处理 geneList 分批
+        geneList.chunked(batchSize) { geneListBatch ->
+            // 处理 genes 分批
+            genes.chunked(batchSize) { genesBatch ->
+                resultSet.addAll(
+                    FungaPlugin.dataManager.useDatabase(db)
+                        .bind(GeneInteractionTable, GeneInteractionMapper::class.java) {
+                            select(GeneInteractionTable.gene1, GeneInteractionTable.gene2)
+                                .where {
+                                    // 使用分批后的列表
+                                    ((GeneInteractionTable.gene1 inList geneListBatch) and
+                                            (GeneInteractionTable.gene2 inList geneListBatch)) and
+                                            ((GeneInteractionTable.gene1 inList genesBatch) or
+                                                    (GeneInteractionTable.gene2 inList genesBatch))
+                                }
+                        }.map {
+                            if (it.gene1 in request.genes) {
+                                it.gene2
+                            } else {
+                                it.gene1
+                            }
+                        }
+                )
             }
-        return if (currentDegree <= request.degree){
+        }
+
+        dg1[currentDegree] = resultSet.toList()
+
+        return if (currentDegree <= request.degree) {
             request.genes = dg1[currentDegree]!!
-            findInteractions(db,request,currentDegree+1) + dg1
-        }else{
+            findInteractions(db, request, currentDegree + 1) + dg1
+        } else {
             dg1
         }
     }
     fun imputationOuterGene(request:ImputationFunGenesRequest): List<MergeData<List<FuncGeneResponse>>> {
         return join(request.dbs()){db->
-            val result = HashMap<String,ArrayList<String>>()
-            val outerGenes = ArrayList<FuncGeneResponse>()
+            val result = HashMap<String,ArrayList<PhenotypeReferences>>()
             val ids = request.genes.asFungaId(db)
             request.phenotypes.forEach {
                 GenePhenotypeTable.search(db, hashMapOf("phenotype" to it),request.topK).forEach {
@@ -185,28 +223,14 @@ object AnalysisService {
                         if (!result.containsKey(it["gene"])){
                             result[it["gene"].toString()] = arrayListOf()
                         }
-                        result[it["gene"]]?.add(it["phenotype"].toString())
+                        result[it["gene"]]?.add(PhenotypeReferences(it["phenotype"].toString(),(it["references"] as JsonArray).map { it.asString }.distinct()))
                     }
                 }
             }
-            result.forEach{gene,ps->
-                /*
-                var ppp = ps as List<String>
-                //检验一下是否相关
-                val isRelated = if (request.type == "union"){
-                    ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAny(request.phenotypes,ps).filter { it != "无" }
-                    ppp.isNotEmpty()
-                }else{
-                    ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAll(request.phenotypes,ps)
-                    ppp.filter { it != "无" }.isNotEmpty() && !ppp.contains("无")
-                }
-                if(isRelated){
-                    outerGenes.add(FuncGeneResponse(gene.asSymbol(db),ppp))
-                }
-                 */
-                outerGenes.add(FuncGeneResponse(gene.asSymbol(db),ps))
-            }
-            return@join outerGenes.filter { it.phenotypes.isNotEmpty() }
+
+            return@join result.map {
+                FuncGeneResponse(it.key.asSymbol(db),it.value)
+            }.filter { it.phenotypes.isNotEmpty() }
         }
     }
     fun isReadyImputation(id:String):Boolean{
@@ -216,8 +240,40 @@ object AnalysisService {
     fun getImputation(request:ImputationResultRequest):Any{
         val dbs = request.dbs()
         val result = tempContainer.callMemory(request.id,gson.fromJson(JsonReader(FileReader(fileManager.getStaticFile(request.id))), AnalysisResult::class.java))
+
         return when(request.type){
-            "discussion" -> result.discussion
+            "discussion" -> {
+                if (request.genes.isEmpty()){
+                    "Please select gene."
+                }else{
+                    val func = try {
+                        result.func.find { it.database == request.dbs()[0] }!!.data!!.filter {
+                            request.genes.contains(it.gene)
+                        }
+                    }catch (e:Exception){
+                        "无"
+                    }
+                    val outer = try {
+                        result.outer.find { it.database == request.dbs()[0] }!!.data!!.filter {
+                            request.genes.contains(it.gene)
+                        }
+                    }catch (e:Exception){
+                        "无"
+                    }
+                    val network = try {
+                        result.predict.find { it.database == request.dbs()[0] }!!.data!!.interactions.filter {
+                            request.genes.contains(it.gene1) || request.genes.contains(it.gene2)
+                        }
+                    }catch (e:Exception){
+                        "无"
+                    }
+                    PaperAssistant.INSTANCE.generateDiscretion(gson.toJson(hashMapOf(
+                        "func" to func,
+                        "outer" to outer,
+                        "network" to network,
+                    )),request.prompt)
+                }
+            }
             "graph" -> {
                 result.graph.map { it.data!! }.flatten().filter {
                     it.gene1 in request.genes && it.gene2 in request.genes
@@ -239,9 +295,13 @@ object AnalysisService {
                     nsc.database = it.database
                     nsc.data = arrayListOf()
                     val pg = PredictGene()
-                    val m = it.data!!.genes.filter { it.value <= request.degree }
+                    val m = it.data!!.genes.filter { it.value < request.degree }
+
                     val mm = HashMap<String,Int>()
                     mm.putAll(m)
+                    mm.keys.forEach {
+                        mm[it] = mm[it]!! + 1
+                    }
                     pg.genes = mm
                     pg.interactions = it.data!!.interactions.filter { it.gene1 in mm.keys || it.gene2 in mm.keys }
                     (nsc.data as ArrayList<PredictGene>).add(pg)
@@ -253,5 +313,8 @@ object AnalysisService {
                 result.func.filter { dbs.contains(it.database) }
             }
         }
+    }
+    fun funcGeneSort(geneData: Map<String, List<String>>,phenotype: String,db: String): SortedGeneResult {
+        return SortAssistant.INSTANCE.sort(geneData,phenotype,db)
     }
 }

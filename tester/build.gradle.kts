@@ -13,9 +13,9 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":module:authentication"))
     implementation(project(":module:file-management"))
-    implementation(project(":module:genome"))
+    //implementation(project(":module:genome"))
     implementation(project(":module:funga"))
-    //implementation(project(":module:mating-type-imputation"))
+   // implementation(project(":module:mating-type-imputation"))
 }
 
 tasks.test {

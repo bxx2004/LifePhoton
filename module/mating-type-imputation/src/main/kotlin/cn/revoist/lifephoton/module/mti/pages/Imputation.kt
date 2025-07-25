@@ -32,18 +32,32 @@ object Imputation {
         val request = call.requestBody(ImputationRequest::class.java)
         val osResultFile = FileManagementAPI.findFileByIdentifier(request.osResultFile)
         val matingResultMatrixFile = FileManagementAPI.findFileByIdentifier(request.matingResultMatrixFile)
-        call.checkNotNull(osResultFile,matingResultMatrixFile)
+        call.checkNotNull(osResultFile, matingResultMatrixFile)
+
         val process = Runtime.getRuntime().exec(
-            "python3 ${MatingTypeImputation.option<String>("exec")} ${matingResultMatrixFile!!.absolutePath} ${osResultFile!!.absolutePath}"
+            "python ${MatingTypeImputation.option<String>("exec")} ${matingResultMatrixFile!!.absolutePath} ${osResultFile!!.absolutePath}"
         )
         process.waitFor()
-        val bufferedReader = BufferedReader(InputStreamReader(process.inputStream))
-        val outFile = File(matingResultMatrixFile!!.absolutePath + ".output.json")
+
+// Read both standard output and error streams
+        val stdInput = BufferedReader(InputStreamReader(process.inputStream))
+        val stdError = BufferedReader(InputStreamReader(process.errorStream))
+
+        val outFile = File(matingResultMatrixFile.absolutePath + ".output.json")
         if (outFile.exists() && outFile.length() > 0) {
-            call.ok(gson.fromJson(outFile.readText(),Any::class.java))
-        }else{
-            call.error("结果未生成: ${bufferedReader.readText()}")
+            call.ok(gson.fromJson(outFile.readText(), Any::class.java))
+        } else {
+            // Read both streams to get complete error information
+            val output = stdInput.readText()
+            val error = stdError.readText()
+
+            if (error.isNotBlank()) {
+                call.error("Error: $error")
+            } else if (output.isNotBlank()) {
+                call.error("Error: $output")
+            } else {
+                call.error("Unknown error occurred during Python script execution")
+            }
         }
-        println(bufferedReader.readText())
     }
 }

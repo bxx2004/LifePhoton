@@ -1,4 +1,4 @@
-package cn.revoist.lifephoton.module.funga.ai.chat
+package cn.revoist.lifephoton.module.funga.ai.assistant
 
 import cn.revoist.lifephoton.module.funga.ai.ModelStore
 import dev.langchain4j.service.AiServices
@@ -65,12 +65,12 @@ heat sensitivity: increased;innate thermotolerance: increased;filamentous growth
 - 输出格式
 无关联 → 返回"无"。
 有关联 → 严格按第二组的原始表述列出所有关联项（即使关联不同第一组术语）。
-直接输出结果即可，无需输出推理逻辑，但你在内部必须进行推理。
+- 直接输出结果即可，无需输出推理逻辑，但你在内部必须进行推理。
 
 示例演示
 - 输入
 第一组：heat;growth
-第二组：heat sensitivity: increased;innate thermotolerance: increased;filamentous growth;Growth in liquid culture during the post-diauxic phase
+第二组：heat sensitivity: increased;innate thermotolerance: increased;filamentous growth;Growth in liquid culture during the post-diauxic phase;化学抵抗增加;性别改变
 - 分析逻辑
 "heat" → 通过因果关联匹配"Heat sensitivity: increased"（PMID 123456）
 "heat" → 层级关联"Innate thermotolerance: increased"（GO:0009266）

@@ -1,8 +1,15 @@
 package cn.revoist.lifephoton.module.funga
 
 import cn.revoist.lifephoton.module.funga.data.core.MilvusDatabase
+import cn.revoist.lifephoton.module.funga.data.table.DBInfoTable
+import cn.revoist.lifephoton.module.funga.data.table.GeneTable
+import cn.revoist.lifephoton.module.funga.tools.fungaIdMapCache
+import cn.revoist.lifephoton.module.funga.tools.symbolMapCache
 import cn.revoist.lifephoton.plugin.Plugin
 import cn.revoist.lifephoton.plugin.anno.AutoUse
+import cn.revoist.lifephoton.plugin.data.maps
+import cn.revoist.lifephoton.plugin.data.mapsWithColumn
+import java.io.File
 
 /**
  * @author 6hisea
@@ -18,13 +25,65 @@ object FungaPlugin : Plugin(){
     override val version: String
         get() = "beta-1"
 
+    val diamondExec = "/data/LifePhoton/funga/exec/${
+        if (getOS() == OS.WINDOWS){
+            "diamond.exe"
+        }else{
+            "diamond"
+        }
+    }"
+    fun dmnd(child:String): File{
+        return File("/data/LifePhoton/funga/dmnd/${child}.dmnd")
+    }
+
     override fun load() {
         MilvusDatabase.init()
+        val dir = File("/data/LifePhoton/funga")
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        val option = File("/data/LifePhoton/funga/db.txt")
+        if (option.exists()) {
+            option.readText().split('\n').forEach {
+                FungaOption.databases.add(it)
+            }
+        }
+        //try load mapping
+        println("Pre loading mapping")
+        val dbs = dataManager.useDatabase().maps(DBInfoTable,DBInfoTable.id).map { it["name"].toString() }
+        dbs.forEach {db->
+            dataManager.useDatabase(db).mapsWithColumn(
+                GeneTable, GeneTable.fungaId, GeneTable.symbol, GeneTable.otherId
+            ).forEach {
+                val symbol = if (it["symbol"] == null){
+                    (it["other_id"] as List<String>)[0]
+                }else if (it["symbol"] == "None"){
+                    (it["other_id"] as List<String>)[0]
+                }else{
+                    it["symbol"].toString()
+                }
+                val fungaId = it["funga_id"] as String
+                if (!symbolMapCache.containsKey(db)){
+                    symbolMapCache[db] = hashMapOf()
+                }
+                if (!fungaIdMapCache.containsKey(db)){
+                    fungaIdMapCache[db] = hashMapOf()
+                }
+                symbolMapCache[db]!![fungaId] = symbol
+                if (it["other_id"] != null){
+                    (it["other_id"] as List<String>).forEach {
+                        fungaIdMapCache[db]!![it] = fungaId
+                    }
+                }
+                fungaIdMapCache[db]!![symbol] = fungaId
+            }
+        }
     }
 
     override fun configure() {
-        optional("embedding-url","http://localhost:11434")
-        optional("milvus-url","https://in03-e97b3b8ec4edfce.serverless.gcp-us-west1.cloud.zilliz.com")
+        optional("embedding-url","http://172.18.0.6:11434")
+        optional("milvus-url","http://172.18.0.4:19530")
+        //optional("milvus-url","https://in03-e97b3b8ec4edfce.serverless.gcp-us-west1.cloud.zilliz.com")
         optional("milvus-username","db_e97b3b8ec4edfce")
         optional("milvus-password","Ad4&.P9Bn<}cL2sh")
         optional("milvus-token","874af09222ab39fe485158431056f13466cbd7c199f6f9739413900f33f588340a4fbc76c466a33a63f7e6fd84d6d143e5f3dfa8")

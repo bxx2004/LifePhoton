@@ -17,8 +17,12 @@ object FileManagementAPI : PluginAPI{
         val target = dir.listFiles()!!.find { it.name.contains(identifier) }
         return target
     }
+    @Deprecated("已过时")
     fun createStaticFileManager(plugin: Plugin):StaticFileManager{
         return StaticFileManager(plugin.id)
+    }
+    fun createStaticFileManager(plugin: Plugin,child: String):StaticFileManager{
+        return StaticFileManager(plugin.id+"/$child")
     }
 
     class StaticFileManager(private val uniqueId:String){
@@ -33,6 +37,7 @@ object FileManagementAPI : PluginAPI{
             func(file)
             file.renameTo(File(file.absolutePath.replace(".tmp","")))
         }
+        @Deprecated("Unsafe")
         fun putStaticFile(p:String,func:(file:File)->Unit){
             val file = File(FileManagement.option<String>("path") + "/static/$uniqueId/$p")
             if (!file.parentFile.exists()){
@@ -40,6 +45,13 @@ object FileManagementAPI : PluginAPI{
             }
             if (!file.exists()){
                 file.createNewFile()
+            }
+            func(file)
+        }
+        fun identityStaticFile(p:String,func:(file:File)->Unit){
+            val file = File(FileManagement.option<String>("path") + "/static/$uniqueId/$p")
+            if (!file.parentFile.exists()){
+                file.parentFile.mkdirs()
             }
             func(file)
         }
