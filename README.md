@@ -2,6 +2,8 @@
 
 FUNGA (Functional Gene Annotation Exploitation Platform) is a platform that utilizes artificial intelligence technology to mine gene functions. By integrating a large amount of cross species genetic information from animals, plants, and fungi with private data, an online analysis platform has been constructed, greatly reducing research time and advancing the research process.
 
+![BAR](https://gitee.com/bxx2004/library/raw/master/bar.png)
+
 ## Features
 
 Here's a list of features included in this project:
