@@ -32,7 +32,7 @@ object Booster {
     var DB_URL = "1Panel-postgresql-Sjm3:5432"
     var DB_NAME = "lifephoton"
     var DB_USERNAME = "liuhaixu"
-    var DB_PASSWORD = "lhx2004."
+    var DB_PASSWORD = "xxxxxxxxxxxxxxxx"
 
     val database = try {
         Database.connect("jdbc:postgresql://${DB_URL}/${DB_NAME}","org.postgresql.Driver",
