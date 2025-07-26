@@ -8,6 +8,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.util.logging.*
+import java.util.Properties
 import kotlin.collections.set
 
 /**
@@ -23,6 +24,7 @@ abstract class Plugin {
     abstract val author:String
     abstract val version:String
     private val config = HashMap<String,Any>()
+    var properties = Properties()
     open val id:String
         get() = name.lowercase()
     abstract fun load()
@@ -41,7 +43,9 @@ abstract class Plugin {
         config[key] = value
     }
 
-
+    fun loadConfig(){
+        properties = loadConfig(id)
+    }
 
     val dataManager = DataManager(this)
 

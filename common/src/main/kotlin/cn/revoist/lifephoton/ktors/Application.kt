@@ -3,6 +3,7 @@ package cn.revoist.lifephoton.ktors
 import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.plugin.getPlugins
 import cn.revoist.lifephoton.plugin.initPluginProvider
+import cn.revoist.lifephoton.plugin.loadConfig
 
 import io.ktor.server.application.*
 import io.ktor.server.config.*
@@ -17,6 +18,11 @@ fun startEngine(args: Array<String>) {
     }
     initPluginProvider(server)
     server.application.configure()
+    val prop = loadConfig("lifephoton")
+    Booster.DB_URL = prop.getProperty("database.url")
+    Booster.DB_PASSWORD = prop.getProperty("database.password")
+    Booster.DB_USERNAME = prop.getProperty("database.username")
+    Booster.DB_NAME = prop.getProperty("database.name")
     Booster.pluginLoad()
     printInfo()
     server.start(true)

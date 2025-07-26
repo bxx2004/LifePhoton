@@ -81,11 +81,5 @@ object FungaPlugin : Plugin(){
     }
 
     override fun configure() {
-        optional("embedding-url","http://172.18.0.6:11434")
-        optional("milvus-url","http://172.18.0.4:19530")
-        //optional("milvus-url","https://in03-e97b3b8ec4edfce.serverless.gcp-us-west1.cloud.zilliz.com")
-        optional("milvus-username","db_e97b3b8ec4edfce")
-        optional("milvus-password","Ad4&.P9Bn<}cL2sh")
-        optional("milvus-token","874af09222ab39fe485158431056f13466cbd7c199f6f9739413900f33f588340a4fbc76c466a33a63f7e6fd84d6d143e5f3dfa8")
     }
 }

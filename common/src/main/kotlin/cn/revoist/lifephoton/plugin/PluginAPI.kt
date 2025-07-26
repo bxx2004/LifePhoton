@@ -8,7 +8,9 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import java.io.File
 import java.lang.reflect.Field
+import java.util.Properties
 
 private val plugins = ArrayList<Plugin>()
 private lateinit var initServer: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
@@ -34,6 +36,7 @@ fun usePlugin(plugin: Plugin) {
     plugin.logger = initServer.application.log
     plugins.add(plugin)
     plugin.configure()
+    plugin.loadConfig()
     plugin.load()
 }
 fun getPlugins():List<Plugin>{
@@ -101,4 +104,22 @@ class CheckBuilder(private val validate:suspend RoutingCall.() -> Boolean,privat
 
 suspend fun RoutingCall.match(func: suspend RoutingCall.()->Boolean):CheckBuilder{
     return CheckBuilder(func,this)
+}
+
+fun loadConfig(id: String): Properties {
+    val f = File("/data/LifePhoton/prop/${id}.properties")
+    if (!f.parentFile.exists()) {
+        f.parentFile.mkdirs()
+    }
+
+    val props = Properties()
+    if (f.exists()) {
+        f.inputStream().use { input ->
+            props.load(input)
+        }
+    } else {
+        // 如果文件不存在，创建空文件并返回空Properties
+        f.createNewFile()
+    }
+    return props
 }

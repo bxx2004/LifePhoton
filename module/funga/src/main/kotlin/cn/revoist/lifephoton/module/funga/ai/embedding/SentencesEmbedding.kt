@@ -10,11 +10,11 @@ import dev.langchain4j.model.ollama.OllamaEmbeddingModel
  * @description: None
  */
 object SentencesEmbedding {
-    val model: EmbeddingModel = OllamaEmbeddingModel.builder()
-        .baseUrl(FungaPlugin.option("embedding-url"))
+    val model = lazy { OllamaEmbeddingModel.builder()
+        .baseUrl(FungaPlugin.properties.getProperty("embedding.url"))
         .modelName("mxbai-embed-large")
-        .build()
+        .build() }
     fun embedding(text:String):List<Float>{
-        return model.embed(text).content().vector().toList()
+        return model.value.embed(text).content().vector().toList()
     }
 }

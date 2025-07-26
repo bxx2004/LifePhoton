@@ -54,7 +54,7 @@ class DataManager(val plugin:Plugin) {
         return result
     }
     fun useDefaultDatabase():Database{
-        return Booster.database!!
+        return Booster.database.value!!
     }
     fun useTable(table:Table<*>,dbName:String = plugin.id){
         val db = databases.find { it.name == dbName }

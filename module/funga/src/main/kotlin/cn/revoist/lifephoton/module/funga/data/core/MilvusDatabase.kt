@@ -49,16 +49,13 @@ import kotlin.reflect.jvm.kotlinProperty
  * @description: None
  */
 object MilvusDatabase {
-    private val config = ConnectConfig.builder()
-        .uri(FungaPlugin.option("milvus-url"))
-        .username(FungaPlugin.option("milvus-username"))
-        .password(FungaPlugin.option("milvus-password"))
-        .token(FungaPlugin.option("milvus-token"))
-        .build()
+    private val config = lazy { ConnectConfig.builder()
+        .uri(FungaPlugin.properties.getProperty("milvus.url"))
+        .build() }
     lateinit var client:MilvusClientV2
 
     fun init(){
-        client = MilvusClientV2(config)
+        client = MilvusClientV2(config.value)
         val onlineDBs = FungaPlugin.dataManager.useDatabase()
             .maps(DBInfoTable, DBInfoTable.id)
             .map {
