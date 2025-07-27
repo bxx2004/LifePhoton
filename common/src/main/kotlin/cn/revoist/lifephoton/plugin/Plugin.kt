@@ -8,6 +8,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import io.ktor.util.logging.*
+import java.io.File
 import java.util.Properties
 import kotlin.collections.set
 
@@ -23,31 +24,24 @@ abstract class Plugin {
     abstract val name:String
     abstract val author:String
     abstract val version:String
-    private val config = HashMap<String,Any>()
-    var properties = Properties()
+    private var properties = Properties()
+    val workdir = File("/data/LifePhoton/$id")
     open val id:String
         get() = name.lowercase()
     abstract fun load()
-    @Deprecated("已过时")
-    abstract fun configure()
-    @Deprecated("已过时")
-    fun <T>option(key:String):T{
-        return config[key] as T
-    }
-    @Deprecated("已过时")
-    fun <T>option(key:String,d:T):T{
-        return (config[key]?:d) as T
-    }
-    @Deprecated("已过时")
-    fun optional(key: String,value:Any){
-        config[key] = value
+    init {
+        properties = loadConfig(id)
+        if (!workdir.exists()){
+            workdir.mkdirs()
+        }
     }
 
-    fun loadConfig(){
-        properties = loadConfig(id)
-    }
 
     val dataManager = DataManager(this)
+
+    fun getConfig(key: String): String{
+        return properties.getProperty(key)
+    }
 
     fun setApplication(application: Application) {
         this.application = application

@@ -3,18 +3,12 @@ package cn.revoist.lifephoton.module.funga.pages
 import cn.revoist.lifephoton.module.funga.FungaPlugin
 import cn.revoist.lifephoton.module.funga.data.entity.inneral.GeoIp
 import cn.revoist.lifephoton.module.funga.data.table.VisitTable
-import cn.revoist.lifephoton.module.funga.data.table.VisitTable.country
 import cn.revoist.lifephoton.module.funga.tools.VisitTool
-import cn.revoist.lifephoton.plugin.data.maps
 import cn.revoist.lifephoton.plugin.route.GET
 import cn.revoist.lifephoton.plugin.route.Route
 import cn.revoist.lifephoton.plugin.route.RouteContainer
 import cn.revoist.lifephoton.plugin.route.error
 import cn.revoist.lifephoton.plugin.route.ok
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.plugins.origin
-import io.ktor.server.response.respondText
 import io.ktor.server.routing.RoutingCall
 import kotlinx.serialization.json.Json
 import org.ktorm.dsl.count
@@ -135,6 +129,8 @@ object Statistics {
                 set(VisitTable.city,geo.city)
             }
             call.ok("ok")
+        }else{
+            call.error("error: geo not found")
         }
     }
 }

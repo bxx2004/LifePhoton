@@ -35,8 +35,6 @@ fun usePlugin(plugin: Plugin) {
     plugin.setApplication(initServer.application)
     plugin.logger = initServer.application.log
     plugins.add(plugin)
-    plugin.configure()
-    plugin.loadConfig()
     plugin.load()
 }
 fun getPlugins():List<Plugin>{

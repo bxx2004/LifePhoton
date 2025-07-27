@@ -20,8 +20,4 @@ object System : Plugin() {
     override fun load() {
 
     }
-
-    override fun configure() {
-
-    }
 }

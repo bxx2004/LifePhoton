@@ -31,8 +31,4 @@ object Auth :Plugin(){
             }
         }
     }
-
-    override fun configure() {
-        optional("multi-email-user",false)
-    }
 }

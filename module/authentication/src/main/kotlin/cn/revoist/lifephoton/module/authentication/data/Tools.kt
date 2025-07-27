@@ -73,19 +73,12 @@ object Tools {
         return Pair(accessToken,refreshToken)
     }
     fun hasUser(username: String,email:String): Boolean {
-        if (Auth.option("multi-email-user")){
-            return Auth.dataManager.useDatabase()
-                .sequenceOf(UserDataTable)
-                .filter {
-                    (it.username eq username) and (it.email eq email)
-                }
-                .count() > 0
-        }
         return Auth.dataManager.useDatabase()
             .sequenceOf(UserDataTable)
             .filter {
-                it.username eq username
-            }.count() > 0
+                (it.username eq username) and (it.email eq email)
+            }
+            .count() > 0
     }
     fun addUser(user: UserDataEntity){
         Auth.dataManager.useDatabase().sequenceOf(UserDataTable).add(user)

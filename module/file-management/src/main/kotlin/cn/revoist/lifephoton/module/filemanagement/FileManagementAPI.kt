@@ -13,8 +13,7 @@ object FileManagementAPI : PluginAPI{
     override val plugin: Plugin
         get() = FileManagement
     fun findFileByIdentifier(identifier: String): File? {
-        val dir = File(FileManagement.option<String>("path"))
-        val target = dir.listFiles()!!.find { it.name.contains(identifier) }
+        val target = FileManagement.workdir.listFiles()!!.find { it.name.contains(identifier) }
         return target
     }
     @Deprecated("已过时")
@@ -27,7 +26,7 @@ object FileManagementAPI : PluginAPI{
 
     class StaticFileManager(private val uniqueId:String){
         fun putStaticFileWithTemp(p:String,func:(file:File)->Unit){
-            val file = File(FileManagement.option<String>("path") + "/static/$uniqueId/$p.tmp")
+            val file = File(FileManagement.workdir.absolutePath + "/static/$uniqueId/$p.tmp")
             if (!file.parentFile.exists()){
                 file.parentFile.mkdirs()
             }
@@ -39,7 +38,7 @@ object FileManagementAPI : PluginAPI{
         }
         @Deprecated("Unsafe")
         fun putStaticFile(p:String,func:(file:File)->Unit){
-            val file = File(FileManagement.option<String>("path") + "/static/$uniqueId/$p")
+            val file = File(FileManagement.workdir.absolutePath + "/static/$uniqueId/$p")
             if (!file.parentFile.exists()){
                 file.parentFile.mkdirs()
             }
@@ -49,14 +48,14 @@ object FileManagementAPI : PluginAPI{
             func(file)
         }
         fun identityStaticFile(p:String,func:(file:File)->Unit){
-            val file = File(FileManagement.option<String>("path") + "/static/$uniqueId/$p")
+            val file = File(FileManagement.workdir.absolutePath + "/static/$uniqueId/$p")
             if (!file.parentFile.exists()){
                 file.parentFile.mkdirs()
             }
             func(file)
         }
         fun getStaticFile(p:String):File{
-            return File(FileManagement.option<String>("path") + "/static/$uniqueId/$p")
+            return File(FileManagement.workdir.absolutePath + "/static/$uniqueId/$p")
         }
     }
 }

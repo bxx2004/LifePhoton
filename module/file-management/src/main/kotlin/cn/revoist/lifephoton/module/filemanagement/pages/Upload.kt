@@ -28,7 +28,7 @@ object Upload : RoutePage("upload",false,false) {
     }
 
     override suspend fun onPost(call: RoutingCall) {
-        val limitSize = FileManagement.option<Long>("size-limit")
+        val limitSize = 1073741824
         val userId = if (call.isLogin()) {
             cn.revoist.lifephoton.module.authentication.data.Tools.findUserByToken((call.sessions.get("user") as UserSession).accessToken)!!.id.toString()
         }else{
@@ -43,7 +43,7 @@ object Upload : RoutePage("upload",false,false) {
                     return@forEachPart
                 }else{
                     val code = System.currentTimeMillis().toString() + "-" + cn.revoist.lifephoton.module.authentication.data.Tools.generateCode()
-                    val f = File(FileManagement.option<String>("path") + "/" + userId + "-" +  code + "-" + name)
+                    val f = File(FileManagement.workdir.absolutePath + "/" + userId + "-" +  code + "-" + name)
                     if (f.exists()){
                         f.delete()
                     }

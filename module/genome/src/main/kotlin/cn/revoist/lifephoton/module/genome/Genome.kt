@@ -21,7 +21,4 @@ object Genome : Plugin() {
 
     }
 
-    override fun configure() {
-
-    }
 }
