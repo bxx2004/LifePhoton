@@ -50,7 +50,7 @@ import kotlin.reflect.jvm.kotlinProperty
  */
 object MilvusDatabase {
     private val config = lazy { ConnectConfig.builder()
-        .uri(FungaPlugin.properties.getProperty("milvus.url"))
+        .uri(FungaPlugin.getConfig("milvus.url","http://localhost:19530"))
         .build() }
     lateinit var client:MilvusClientV2
 

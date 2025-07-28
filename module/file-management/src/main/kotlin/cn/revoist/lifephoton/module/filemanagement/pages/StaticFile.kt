@@ -26,7 +26,7 @@ object StaticFile : RoutePage("static"){
             call.error("Please input the path.")
             return
         }else{
-            val file = File(FileManagement.option<String>("path") + "static/"+path)
+            val file = File(FileManagement.workdir.absolutePath + "/static/"+path)
             call.response.header(
                 HttpHeaders.ContentDisposition,
                 ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, file.name)

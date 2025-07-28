@@ -11,7 +11,7 @@ repositories {
 
 dependencies {
     compileOnly(project(":common"))
-    compileOnly(project(":module:file-management-not-auth"))
+    compileOnly(project(":module:file-management"))
 }
 
 tasks.test {

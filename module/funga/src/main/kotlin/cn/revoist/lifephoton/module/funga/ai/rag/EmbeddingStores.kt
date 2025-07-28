@@ -25,7 +25,7 @@ object EmbeddingStores {
     val lit = lazy {
         listOf(
             MilvusEmbeddingStore.builder()
-                .host(FungaPlugin.properties.getProperty("milvus.url"))
+                .host(FungaPlugin.getConfig("milvus.url","http://localhost:19530"))
                 .collectionName("literature_1")      // 集合名称
                 .dimension(1024)                            // 向量维度
                 .indexType(IndexType.FLAT)                 // 索引类型
@@ -52,8 +52,5 @@ object EmbeddingStores {
         document.metadata().put("visible", visible.toString())
         val es = lit.value[page]
         EmbeddingStoreIngestor.ingest(document, es)
-        FungaPlugin.dataManager.useDatabase().insert(LiteratureTable){
-            set(LiteratureTable.user_id)
-        }
     }
 }

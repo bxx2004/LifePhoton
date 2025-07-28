@@ -20,6 +20,7 @@ object FileManagement : Plugin(){
     override val id: String
         get() = "file-management"
 
+    val staticDir = declareDir("static")
 
     override fun load() {
         val patha = File("/data/LifePhoton/file-management/static/")

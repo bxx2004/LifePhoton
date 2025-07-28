@@ -79,7 +79,4 @@ object FungaPlugin : Plugin(){
             }
         }
     }
-
-    override fun configure() {
-    }
 }

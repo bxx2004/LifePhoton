@@ -1,8 +1,10 @@
 package cn.revoist.lifephoton.module.filemanagement.pages
 
 import cn.revoist.lifephoton.ktors.UserSession
+import cn.revoist.lifephoton.module.authentication.data.Tools
 import cn.revoist.lifephoton.module.authentication.isLogin
 import cn.revoist.lifephoton.module.filemanagement.FileManagement
+import cn.revoist.lifephoton.module.filemanagement.FileManagementAPI
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.route.RoutePage
 import cn.revoist.lifephoton.plugin.route.error
@@ -29,10 +31,10 @@ object Upload : RoutePage("upload",false,false) {
 
     override suspend fun onPost(call: RoutingCall) {
         val limitSize = 1073741824
-        val userId = if (call.isLogin()) {
-            cn.revoist.lifephoton.module.authentication.data.Tools.findUserByToken((call.sessions.get("user") as UserSession).accessToken)!!.id.toString()
+        val user = if (call.isLogin()){
+            Tools.findUserByToken((call.sessions.get("user") as UserSession).accessToken)
         }else{
-            "default"
+            null
         }
         call.receiveMultipart().forEachPart { part ->
             if (part is PartData.FileItem) {
@@ -42,13 +44,10 @@ object Upload : RoutePage("upload",false,false) {
                     call.error("limit size: <= $limitSize")
                     return@forEachPart
                 }else{
-                    val code = System.currentTimeMillis().toString() + "-" + cn.revoist.lifephoton.module.authentication.data.Tools.generateCode()
-                    val f = File(FileManagement.workdir.absolutePath + "/" + userId + "-" +  code + "-" + name)
-                    if (f.exists()){
-                        f.delete()
+                    val code = System.currentTimeMillis().toString() + "-" + Tools.generateCode()
+                    FileManagementAPI.write(name?:"Unknown",user,true){
+                        it.writeBytes(file)
                     }
-                    f.createNewFile()
-                    f.writeBytes(file)
                     call.ok(
                         hashMapOf(
                             "path" to code

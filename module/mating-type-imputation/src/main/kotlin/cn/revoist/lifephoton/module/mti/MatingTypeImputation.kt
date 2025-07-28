@@ -22,8 +22,4 @@ object MatingTypeImputation : Plugin() {
     override fun load() {
 
     }
-
-    override fun configure() {
-        optional("exec","/data/LifePhoton/mating-type-imputation/mating_type_imputation.py")
-    }
 }

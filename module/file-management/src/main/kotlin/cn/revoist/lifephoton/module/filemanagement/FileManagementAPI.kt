@@ -1,7 +1,17 @@
 package cn.revoist.lifephoton.module.filemanagement
 
+import cn.revoist.lifephoton.module.authentication.data.Tools
+import cn.revoist.lifephoton.module.authentication.data.entity.UserDataEntity
 import cn.revoist.lifephoton.plugin.Plugin
 import cn.revoist.lifephoton.plugin.PluginAPI
+import cn.revoist.lifephoton.plugin.route.ok
+import io.ktor.server.html.insert
+import org.ktorm.dsl.eq
+import org.ktorm.dsl.from
+import org.ktorm.dsl.insert
+import org.ktorm.dsl.map
+import org.ktorm.dsl.select
+import org.ktorm.dsl.where
 import java.io.File
 
 /**
@@ -12,10 +22,6 @@ import java.io.File
 object FileManagementAPI : PluginAPI{
     override val plugin: Plugin
         get() = FileManagement
-    fun findFileByIdentifier(identifier: String): File? {
-        val target = FileManagement.workdir.listFiles()!!.find { it.name.contains(identifier) }
-        return target
-    }
     @Deprecated("已过时")
     fun createStaticFileManager(plugin: Plugin):StaticFileManager{
         return StaticFileManager(plugin.id)
@@ -24,9 +30,53 @@ object FileManagementAPI : PluginAPI{
         return StaticFileManager(plugin.id+"/$child")
     }
 
+    fun write(name:String, user: UserDataEntity?, upload: Boolean, func:(File)->Unit){
+        val code = System.currentTimeMillis().toString() + "-" + Tools.generateCode()
+        val f = File(FileManagement.workdir, "$code.lpa")
+        if (f.exists()){
+            f.delete()
+        }
+        f.createNewFile()
+        func(f)
+        FileManagement.dataManager.useDatabase()
+            .insert(FileManagementTable){
+                set(FileManagementTable.name,name)
+                set(FileManagementTable.path,f.absolutePath)
+                set(FileManagementTable.user_id,user?.id?:-1)
+                set(FileManagementTable.timestamp,System.currentTimeMillis())
+                set(FileManagementTable.visitor,"")
+                set(FileManagementTable.file_id,code)
+                set(FileManagementTable.upload,upload)
+        }
+    }
+
+    fun findFileById(id: String): File?{
+        val filePath = FileManagement.dataManager.useDatabase().from(FileManagementTable)
+            .select(FileManagementTable.path)
+            .where {
+                FileManagementTable.file_id eq id
+            }.map {
+                it.get(FileManagementTable.file_id).toString()
+            }.firstOrNull()
+        if (filePath != null){
+            return File(filePath)
+        }
+        return null
+    }
+    fun findFileByUser(id: Long): List<File>{
+        return FileManagement.dataManager.useDatabase().from(FileManagementTable)
+            .select(FileManagementTable.path)
+            .where {
+                FileManagementTable.user_id eq id
+            }.map {
+                File(it.get(FileManagementTable.file_id).toString())
+            }
+    }
+
     class StaticFileManager(private val uniqueId:String){
         fun putStaticFileWithTemp(p:String,func:(file:File)->Unit){
-            val file = File(FileManagement.workdir.absolutePath + "/static/$uniqueId/$p.tmp")
+
+            val file = File(FileManagement.staticDir,"$uniqueId/$p.tmp")
             if (!file.parentFile.exists()){
                 file.parentFile.mkdirs()
             }
@@ -38,7 +88,7 @@ object FileManagementAPI : PluginAPI{
         }
         @Deprecated("Unsafe")
         fun putStaticFile(p:String,func:(file:File)->Unit){
-            val file = File(FileManagement.workdir.absolutePath + "/static/$uniqueId/$p")
+            val file = File(FileManagement.staticDir,"$uniqueId/$p")
             if (!file.parentFile.exists()){
                 file.parentFile.mkdirs()
             }
@@ -48,14 +98,14 @@ object FileManagementAPI : PluginAPI{
             func(file)
         }
         fun identityStaticFile(p:String,func:(file:File)->Unit){
-            val file = File(FileManagement.workdir.absolutePath + "/static/$uniqueId/$p")
+            val file = File(FileManagement.staticDir,"$uniqueId/$p.tmp")
             if (!file.parentFile.exists()){
                 file.parentFile.mkdirs()
             }
             func(file)
         }
         fun getStaticFile(p:String):File{
-            return File(FileManagement.workdir.absolutePath + "/static/$uniqueId/$p")
+            return File(FileManagement.staticDir,"$uniqueId/$p.tmp")
         }
     }
 }

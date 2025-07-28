@@ -35,12 +35,19 @@ abstract class Plugin {
             workdir.mkdirs()
         }
     }
+    fun declareDir(path:String): File{
+        return File(workdir, path).apply {
+            if (!exists()){
+                mkdirs()
+            }
+        }
+    }
 
 
     val dataManager = DataManager(this)
 
-    fun getConfig(key: String): String{
-        return properties.getProperty(key)
+    fun getConfig(key: String,default: String?=null): String{
+        return properties.getProperty(key,default)
     }
 
     fun setApplication(application: Application) {

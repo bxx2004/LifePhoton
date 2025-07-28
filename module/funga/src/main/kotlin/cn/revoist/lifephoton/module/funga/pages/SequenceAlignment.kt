@@ -29,7 +29,7 @@ object SequenceAlignment {
         val type = call.parameters["type"]!!
         val species = call.parameters["species"]!!
         val eValue = call.parameters["eValue"]!!.toDouble()
-        call.ok(ToolsService.alignment(FileManagementAPI.findFileByIdentifier(fileId)!!,species,type,eValue))
+        call.ok(ToolsService.alignment(FileManagementAPI.findFileById(fileId)!!,species,type,eValue))
     }
     @Route(GET)
     suspend fun getAllAlignmentSpecies(call: RoutingCall){

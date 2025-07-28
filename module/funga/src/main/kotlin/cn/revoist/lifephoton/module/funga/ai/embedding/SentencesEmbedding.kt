@@ -11,7 +11,7 @@ import dev.langchain4j.model.ollama.OllamaEmbeddingModel
  */
 object SentencesEmbedding {
     val model = lazy { OllamaEmbeddingModel.builder()
-        .baseUrl(FungaPlugin.properties.getProperty("embedding.url"))
+        .baseUrl(FungaPlugin.getConfig("embedding.url","http://localhost:1966"))
         .modelName("mxbai-embed-large")
         .build() }
     fun embedding(text:String):List<Float>{

@@ -30,12 +30,12 @@ object Imputation {
     )
     suspend fun getImputationResult(call: RoutingCall){
         val request = call.requestBody(ImputationRequest::class.java)
-        val osResultFile = FileManagementAPI.findFileByIdentifier(request.osResultFile)
-        val matingResultMatrixFile = FileManagementAPI.findFileByIdentifier(request.matingResultMatrixFile)
+        val osResultFile = FileManagementAPI.findFileById(request.osResultFile)
+        val matingResultMatrixFile = FileManagementAPI.findFileById(request.matingResultMatrixFile)
         call.checkNotNull(osResultFile, matingResultMatrixFile)
 
         val process = Runtime.getRuntime().exec(
-            "python ${MatingTypeImputation.option<String>("exec")} ${matingResultMatrixFile!!.absolutePath} ${osResultFile!!.absolutePath}"
+            "python ${MatingTypeImputation.getConfig("exec","/data/LifePhoton/mating-type-imputation/mating_type_imputation.py")} ${matingResultMatrixFile!!.absolutePath} ${osResultFile!!.absolutePath}"
         )
         process.waitFor()
 
