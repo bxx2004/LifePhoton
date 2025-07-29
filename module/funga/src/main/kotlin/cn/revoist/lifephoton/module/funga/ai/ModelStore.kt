@@ -1,5 +1,6 @@
 package cn.revoist.lifephoton.module.funga.ai
 
+import cn.revoist.lifephoton.module.funga.FungaPlugin
 import dev.langchain4j.model.openai.OpenAiChatModel
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel
 
@@ -10,8 +11,8 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel
  * @description: None
  */
 object ModelStore {
-    val DeepSeekKey = "sk-57b14de157dd400193bc0a24b1165325"
-    val GLMKey = "c8fba303e2d621ca854ccdc3922dbd8b.EdGphBg8gXYhfa2x"
+    val DeepSeekKey = FungaPlugin.getConfig("ai.deepseek","xxxxxx")
+    val GLMKey = FungaPlugin.getConfig("ai.chatglm","xxxxxx")
     var deepSeekV3 = OpenAiChatModel.builder()
         .baseUrl("https://api.deepseek.com")
         .modelName("deepseek-chat")
