@@ -12,6 +12,10 @@ import org.ktorm.dsl.insert
 import org.ktorm.dsl.map
 import org.ktorm.dsl.select
 import org.ktorm.dsl.where
+import org.ktorm.entity.filter
+import org.ktorm.entity.find
+import org.ktorm.entity.sequenceOf
+import org.ktorm.entity.toList
 import java.io.File
 
 /**
@@ -30,7 +34,7 @@ object FileManagementAPI : PluginAPI{
         return StaticFileManager(plugin.id+"/$child")
     }
 
-    fun write(name:String, user: UserDataEntity?, upload: Boolean, func:(File)->Unit){
+    fun write(name:String, user: UserDataEntity?, upload: Boolean, source: Plugin, func:(File)->Unit){
         val code = System.currentTimeMillis().toString() + "-" + Tools.generateCode()
         val f = File(FileManagement.workdir, "$code.lpa")
         if (f.exists()){
@@ -41,6 +45,7 @@ object FileManagementAPI : PluginAPI{
         FileManagement.dataManager.useDatabase()
             .insert(FileManagementTable){
                 set(FileManagementTable.name,name)
+                set(FileManagementTable.source,source.id)
                 set(FileManagementTable.path,f.absolutePath)
                 set(FileManagementTable.user_id,user?.id?:-1)
                 set(FileManagementTable.timestamp,System.currentTimeMillis())
@@ -48,6 +53,17 @@ object FileManagementAPI : PluginAPI{
                 set(FileManagementTable.file_id,code)
                 set(FileManagementTable.upload,upload)
         }
+    }
+
+    fun findRecordById(id:String): FileManagementTable.FileUnit?{
+        return FileManagement.dataManager.useDatabase().sequenceOf(FileManagementTable).find {
+            it.file_id eq id
+        }
+    }
+    fun findRecordByUser(id: Long): List<FileManagementTable.FileUnit>{
+        return FileManagement.dataManager.useDatabase().sequenceOf(FileManagementTable).filter {
+            it.user_id eq id
+        }.toList()
     }
 
     fun findFileById(id: String): File?{
@@ -75,7 +91,6 @@ object FileManagementAPI : PluginAPI{
 
     class StaticFileManager(private val uniqueId:String){
         fun putStaticFileWithTemp(p:String,func:(file:File)->Unit){
-
             val file = File(FileManagement.staticDir,"$uniqueId/$p.tmp")
             if (!file.parentFile.exists()){
                 file.parentFile.mkdirs()

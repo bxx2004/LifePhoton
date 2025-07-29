@@ -45,7 +45,7 @@ object Upload : RoutePage("upload",false,false) {
                     return@forEachPart
                 }else{
                     val code = System.currentTimeMillis().toString() + "-" + Tools.generateCode()
-                    FileManagementAPI.write(name?:"Unknown",user,true){
+                    FileManagementAPI.write(name?:"Unknown",user,true, FileManagement){
                         it.writeBytes(file)
                     }
                     call.ok(

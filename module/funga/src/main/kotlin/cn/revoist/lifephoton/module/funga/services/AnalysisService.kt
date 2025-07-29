@@ -94,7 +94,7 @@ object AnalysisService {
                             id,
                             startDate,
                             endDate,
-                            "http://localhost:5173/genePhenotypeDetail?id=${id}"
+                            "http://funga.revoist.cn/genePhenotypeDetail?id=${id}"
                         ))
                     }
                 }

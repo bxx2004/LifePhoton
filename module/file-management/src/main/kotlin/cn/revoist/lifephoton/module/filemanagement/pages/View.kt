@@ -9,6 +9,7 @@ import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.route.RoutePage
 import cn.revoist.lifephoton.plugin.route.error
 import io.ktor.http.*
+import io.ktor.server.response.header
 import io.ktor.server.response.respondFile
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
@@ -69,6 +70,11 @@ object View : RoutePage("view"){
             }
         }else{
             //写入文件名称
+            call.response.header(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, file.name)
+                    .toString()
+            )
             call.respondFile(File(file.path))
         }
     }

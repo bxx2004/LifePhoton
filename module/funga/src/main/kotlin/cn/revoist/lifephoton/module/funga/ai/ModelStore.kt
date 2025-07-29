@@ -10,8 +10,8 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel
  * @description: None
  */
 object ModelStore {
-    val DeepSeekKey = "xxx"
-    val GLMKey = "xxx"
+    val DeepSeekKey = "sk-57b14de157dd400193bc0a24b1165325"
+    val GLMKey = "c8fba303e2d621ca854ccdc3922dbd8b.EdGphBg8gXYhfa2x"
     var deepSeekV3 = OpenAiChatModel.builder()
         .baseUrl("https://api.deepseek.com")
         .modelName("deepseek-chat")

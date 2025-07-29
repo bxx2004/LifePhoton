@@ -22,6 +22,7 @@ object FileManagementTable:Table<FileManagementTable.FileUnit>("file_management"
     val name = varchar("name").bindTo { it.name }
     val visitor = varchar("visitor").bindTo { it.visitor }
     val upload = boolean("upload").bindTo { it.upload }
+    val source = varchar("source").bindTo { it.source }
     interface FileUnit:Entity<FileUnit>{
         companion object : Entity.Factory<FileUnit>()
         val id:Int
@@ -31,6 +32,7 @@ object FileManagementTable:Table<FileManagementTable.FileUnit>("file_management"
         var timestamp:Long
         var name:String
         var visitor:String
+        var source:String
         var upload: Boolean
     }
 }
