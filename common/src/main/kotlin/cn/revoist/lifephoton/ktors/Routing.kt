@@ -4,6 +4,7 @@ import cn.revoist.lifephoton.plugin.data.pool.Page
 import cn.revoist.lifephoton.plugin.event.events.AuthenticationEvent
 import cn.revoist.lifephoton.plugin.event.events.RootPageRequestEvent
 import cn.revoist.lifephoton.plugin.getPlugin
+import cn.revoist.lifephoton.plugin.property
 import cn.revoist.lifephoton.plugin.route.ErrorResponse
 import com.google.gson.Gson
 import io.ktor.http.*
@@ -58,18 +59,18 @@ fun Application.configureRouting() {
                 call.respond(ErrorResponse(message = "Not page found."))
                 return@get
             }
-            if (page.lock){
+            if (page.property("lock") as Boolean){
                 val userCookie = call.sessions.get("user") ?: UserSession("-1","-1")
                 val event = AuthenticationEvent(userCookie as UserSession,false).call() as AuthenticationEvent
                 if (event.truth){
-                    call.respond(page.toResponse())
+                    call.respond(page.toResponse(number))
                 }else{
                     call.respond(
                         ErrorResponse(false,"Please login")
                     )
                 }
             }else{
-                call.respond(page.toResponse())
+                call.respond(page.toResponse(number))
             }
         }
     }

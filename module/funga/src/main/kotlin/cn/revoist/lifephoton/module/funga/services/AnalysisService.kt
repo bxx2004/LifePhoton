@@ -2,6 +2,7 @@ package cn.revoist.lifephoton.module.funga.services
 
 import cn.revoist.lifephoton.module.authentication.analysisTemplate
 import cn.revoist.lifephoton.module.authentication.data.entity.UserDataEntity
+import cn.revoist.lifephoton.module.authentication.data.table.hasFriend
 import cn.revoist.lifephoton.module.authentication.sendEmail
 import cn.revoist.lifephoton.module.authentication.sendEmailNotice
 import cn.revoist.lifephoton.module.filemanagement.FileManagementAPI
@@ -10,6 +11,7 @@ import cn.revoist.lifephoton.module.funga.ai.assistant.AnalysisAssistant
 import cn.revoist.lifephoton.module.funga.ai.assistant.PaperAssistant
 import cn.revoist.lifephoton.module.funga.ai.assistant.SortAssistant
 import cn.revoist.lifephoton.module.funga.data.core.MilvusDatabase.search
+import cn.revoist.lifephoton.module.funga.data.entity.ai.GeneResult
 import cn.revoist.lifephoton.module.funga.data.entity.ai.SortedGeneResult
 import cn.revoist.lifephoton.module.funga.data.entity.inneral.AnalysisResult
 import cn.revoist.lifephoton.module.funga.data.entity.inneral.PredictGene
@@ -23,7 +25,9 @@ import cn.revoist.lifephoton.module.funga.data.entity.response.FuncGeneResponse
 import cn.revoist.lifephoton.module.funga.data.entity.response.PhenotypeReferences
 import cn.revoist.lifephoton.module.funga.data.entity.response.PredictGeneResponse
 import cn.revoist.lifephoton.module.funga.data.table.GeneInteractionTable
+import cn.revoist.lifephoton.module.funga.data.table.GenePhenotypeAnalysisTable
 import cn.revoist.lifephoton.module.funga.data.table.GenePhenotypeTable
+import cn.revoist.lifephoton.module.funga.data.table.type.AnalysisSummary
 import cn.revoist.lifephoton.module.funga.tools.asFungaId
 import cn.revoist.lifephoton.module.funga.tools.asSymbol
 import cn.revoist.lifephoton.plugin.data.bind
@@ -46,9 +50,8 @@ import kotlin.random.Random
  * @description: None
  */
 object AnalysisService {
-    val fileManager = FileManagementAPI.createStaticFileManager(FungaPlugin,"analysis")
     val tempContainer = FungaPlugin.dataManager.useTempContainer<AnalysisResult>()
-    fun nohupImputationFunGenes(request: ImputationFunGenesRequest,user:UserDataEntity?): String {
+    fun nohupImputationFunGenes(request: ImputationFunGenesRequest,user:UserDataEntity): String {
         val id = (System.currentTimeMillis() + Random(1000).nextInt()).toString()
         submit(-1,-1){
             try {
@@ -82,26 +85,31 @@ object AnalysisService {
                     "predict" to predictGenes,
                     "graph" to GeneService.getInteractionsByGeneList(req),
                 )
-                fileManager.putStaticFileWithTemp(id){
-                    it.writeText(gson.toJson(data))
-                }
+                val summary = AnalysisSummary(request.dbs(),request.genes.size,request.phenotypes,request.type,request.degree,request.topK)
                 val endDate = Date().toString()
-                if (user != null){
-                    runBlocking {
-                        user.sendEmailNotice("【FUNGA-Analysis】Your analysis has been completed",analysisTemplate(
-                            "【FUNGA-Analysis】Your analysis has been completed",
-                            user.username,
-                            id,
-                            startDate,
-                            endDate,
-                            "http://funga.revoist.cn/genePhenotypeDetail?id=${id}"
-                        ))
+                FungaPlugin.dataManager.useDatabase()
+                    .insert(GenePhenotypeAnalysisTable){
+                        set(GenePhenotypeAnalysisTable.analysis_id,id)
+                        set(GenePhenotypeAnalysisTable.result,gson.fromJson(gson.toJson(data), AnalysisResult::class.java))
+                        set(GenePhenotypeAnalysisTable.user_id,user.id)
+                        set(GenePhenotypeAnalysisTable.date, endDate)
+                        set(GenePhenotypeAnalysisTable.summary,summary)
                     }
+
+                runBlocking {
+                    user.sendEmailNotice("【FUNGA-Analysis】Your analysis has been completed",analysisTemplate(
+                        "【FUNGA-Analysis】Your analysis has been completed",
+                        user.username,
+                        id,
+                        startDate,
+                        endDate,
+                        "http://funga.revoist.cn/genePhenotypeDetail?id=${id}"
+                    ))
                 }
             }catch (e:Exception){
                 e.printStackTrace()
                 runBlocking {
-                    user?.sendEmail("【FUNGA-Analysis】您的分析已经失败","原因：${e.toString()}.")
+                    user.sendEmail("【FUNGA-Analysis】Your analysis has been failed","reason：${e.toString()}.")
                 }
             }
         }
@@ -127,29 +135,27 @@ object AnalysisService {
                     (phenotypes[it["gene"].toString()] as ArrayList<String>).add(it["phenotype"].toString())
                 }
             phenotypes.forEach {gene,ps->
-                var ppp = ps
+                var ppp: GeneResult
                 //尝试新逻辑能否实现。
                 //大量提示词一起发送。
                 //判断Token长度
                 //检验一下是否相关
-
-                //输出推理过程，优化页面web
                 try {
                     val isRelated = if (request.type == "union"){
-                        ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAny(request.phenotypes,ps).filter { it != "无" }
-                        ppp.isNotEmpty()
+                        ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAny(request.phenotypes,ps)
+                        ppp.phenotypes.isNotEmpty()
                     }else{
                         ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAll(request.phenotypes,ps)
-                        ppp.filter { it != "无" }.isNotEmpty() && !ppp.contains("无")
+                        ppp.phenotypes.isNotEmpty()
                     }
                     if(isRelated){
                         val result = FungaPlugin.dataManager.useDatabase(db)
                             .mapsWithColumn(GenePhenotypeTable, GenePhenotypeTable.phenotype,GenePhenotypeTable.references){
                                 where {
-                                    GenePhenotypeTable.gene eq gene and (GenePhenotypeTable.phenotype inList ppp)
+                                    GenePhenotypeTable.gene eq gene and (GenePhenotypeTable.phenotype inList ppp.phenotypes)
                                 }
                             }.map {
-                                PhenotypeReferences(it["phenotype"].toString(),(it["references"] as List<String>).distinct())
+                                PhenotypeReferences(it["phenotype"].toString(),(it["references"] as List<String>).distinct(),ppp.summary)
                             }
                         funcGenes.add(FuncGeneResponse(gene.asSymbol(db),result))
                     }
@@ -223,7 +229,7 @@ object AnalysisService {
                         if (!result.containsKey(it["gene"])){
                             result[it["gene"].toString()] = arrayListOf()
                         }
-                        result[it["gene"]]?.add(PhenotypeReferences(it["phenotype"].toString(),(it["references"] as JsonArray).map { it.asString }.distinct()))
+                        result[it["gene"]]?.add(PhenotypeReferences(it["phenotype"].toString(),(it["references"] as JsonArray).map { it.asString }.distinct(),"causality"))
                     }
                 }
             }
@@ -234,12 +240,28 @@ object AnalysisService {
         }
     }
     fun isReadyImputation(id:String):Boolean{
-        val f = fileManager.getStaticFile(id)
-        return f.exists()
+        return FungaPlugin.dataManager.useDatabase()
+            .from(GenePhenotypeTable)
+            .select(GenePhenotypeAnalysisTable.analysis_id)
+            .where {
+                GenePhenotypeAnalysisTable.analysis_id eq id
+            }.asIterable().toList().isNotEmpty()
     }
-    fun getImputation(request:ImputationResultRequest):Any{
+    fun getImputation(request:ImputationResultRequest,user: UserDataEntity):Any{
         val dbs = request.dbs()
-        val result = tempContainer.callMemory(request.id,gson.fromJson(JsonReader(FileReader(fileManager.getStaticFile(request.id))), AnalysisResult::class.java))
+        val data = FungaPlugin.dataManager.useDatabase()
+            .from(GenePhenotypeTable)
+            .select()
+            .where {
+                GenePhenotypeAnalysisTable.user_id eq user.id
+            }.asIterable().firstOrNull()
+        if (data == null) {
+            return "Not found data."
+        }
+        if (!data[GenePhenotypeAnalysisTable.user_id]!!.hasFriend(user.id)) {
+            return "You don't have permission to look this data."
+        }
+        val result = data[GenePhenotypeAnalysisTable.result]!!
 
         return when(request.type){
             "discussion" -> {

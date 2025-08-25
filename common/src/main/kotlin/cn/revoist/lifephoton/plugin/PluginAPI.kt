@@ -75,7 +75,7 @@ suspend fun RoutingCall.paging(manager:DataManager,data:List<Any>,lock:Boolean =
     val res = if (cache){
         val id = manager.usePaginationCache(request.uri)
         if (id != null){
-            manager.getPage(id,1)?.toResponse()
+            manager.getPage(id,1)?.toResponse(1)
         }else{
             manager.usePagination(data,pageSize(),lock,request.uri)
         }

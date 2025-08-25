@@ -26,6 +26,12 @@ class TempMemoryContainer<T>() {
         }
         return pool[id]!!
     }
+    fun callMemory(id:String,default:()->T):T{
+        if (!exists(id)){
+            pool[id] = default()
+        }
+        return pool[id]!!
+    }
     fun exists(id:String):Boolean{
         return pool.containsKey(id)
     }

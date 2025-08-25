@@ -50,7 +50,12 @@ object GeneService {
                     where {
                         (GeneInteractionTable.gene1 inList request.genes.asFungaId(db)) and (GeneInteractionTable.gene2 inList request.genes.asFungaId(db))
                     }
-                }.tryMapping(db)
+                }.tryMapping(db).let {
+                    it.forEach {
+                        it["references"] = (it["references"] as List<String>).distinct()
+                    }
+                    it
+                }
         }
     }
     fun getInteractionsByPGR(pgr:PredictGeneResponse,db:String): HashMap<String, Any> {
@@ -66,7 +71,12 @@ object GeneService {
                     where {
                         (GeneInteractionTable.gene1 inList allGenes) and (GeneInteractionTable.gene2 inList allGenes)
                     }
-                }.tryMapping(db),
+                }.tryMapping(db).let {
+                    it.forEach {
+                        it["summary"] = "interaction"
+                    }
+                    it
+                },
             "genes" to degrees
         )
     }

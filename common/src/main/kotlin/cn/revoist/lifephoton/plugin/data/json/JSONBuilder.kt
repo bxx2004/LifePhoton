@@ -10,6 +10,9 @@ class ObjBuilder {
     fun put(key: String, value: Any) {
         ele[key] = value
     }
+    infix fun put(pair: Pair<String, Any>) {
+        ele.put(pair.first, pair.second)
+    }
     fun obj(key: String,func: ObjBuilder.() -> Unit) {
         ele[key] = jsonObject {
             func(this)

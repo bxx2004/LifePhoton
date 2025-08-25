@@ -3,29 +3,24 @@ package cn.revoist.lifephoton.module.funga.pages
 import cn.revoist.lifephoton.module.authentication.asEntity
 import cn.revoist.lifephoton.module.authentication.getUser
 import cn.revoist.lifephoton.module.authentication.isLogin
-import cn.revoist.lifephoton.module.filemanagement.FileManagementAPI
 import cn.revoist.lifephoton.module.funga.FungaPlugin
 import cn.revoist.lifephoton.module.funga.data.entity.request.FuncGeneSortedRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationFunGenesRequest
-import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationPredictGenesRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationResultRequest
 import cn.revoist.lifephoton.module.funga.data.table.GenePhenotypeTable
 import cn.revoist.lifephoton.module.funga.services.AnalysisService
 import cn.revoist.lifephoton.module.funga.tools.asFungaId
 import cn.revoist.lifephoton.module.funga.tools.asSymbol
-import cn.revoist.lifephoton.plugin.data.maps
 import cn.revoist.lifephoton.plugin.requestBody
 import cn.revoist.lifephoton.plugin.route.*
 import cn.revoist.lifephoton.plugin.route.Route
 import cn.revoist.lifephoton.tools.checkNotNull
-import com.google.gson.stream.JsonReader
 import io.ktor.server.routing.*
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.from
 import org.ktorm.dsl.map
 import org.ktorm.dsl.select
 import org.ktorm.dsl.where
-import java.io.FileReader
 
 
 /**
@@ -35,22 +30,6 @@ import java.io.FileReader
  */
 @RouteContainer("funga","analysis")
 object Analysis {
-
-    @Route
-    suspend fun imputationGenes(call:RoutingCall){
-        val request = call.requestBody(ImputationFunGenesRequest::class.java)
-        call.ok(AnalysisService.imputationFunGenes(request))
-    }
-    @Route
-    suspend fun imputationPredictGenes(call:RoutingCall){
-        val request = call.requestBody(ImputationPredictGenesRequest::class.java)
-        call.ok(AnalysisService.imputationPredictGene(request))
-    }
-    @Route
-    suspend fun imputationOuterGenes(call:RoutingCall){
-        val request = call.requestBody(ImputationFunGenesRequest::class.java)
-        call.ok(AnalysisService.imputationOuterGene(request))
-    }
     @Route
     suspend fun nohupImputation(call: RoutingCall){
         val request = call.requestBody(ImputationFunGenesRequest::class.java)
@@ -59,6 +38,10 @@ object Analysis {
             call.getUser().asEntity
         }else{
             null
+        }
+        if (user == null){
+            call.error("You not login.")
+            return
         }
         call.ok(AnalysisService.nohupImputationFunGenes(request,user))
     }
@@ -69,7 +52,16 @@ object Analysis {
         val request = call.requestBody(ImputationResultRequest::class.java)
         call.checkNotNull(request.id)
         if (AnalysisService.isReadyImputation(request.id)) {
-            call.ok(AnalysisService.getImputation(request))
+            val user = if (call.isLogin()) {
+                call.getUser().asEntity
+            }else{
+                null
+            }
+            if (user == null){
+                call.error("You not login.")
+                return
+            }
+            call.ok(AnalysisService.getImputation(request,user))
         }else{
             call.error("Not query id.")
         }

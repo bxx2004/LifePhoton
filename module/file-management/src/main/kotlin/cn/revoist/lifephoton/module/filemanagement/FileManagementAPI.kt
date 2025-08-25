@@ -113,14 +113,14 @@ object FileManagementAPI : PluginAPI{
             func(file)
         }
         fun identityStaticFile(p:String,func:(file:File)->Unit){
-            val file = File(FileManagement.staticDir,"$uniqueId/$p.tmp")
+            val file = File(FileManagement.staticDir,"$uniqueId/$p")
             if (!file.parentFile.exists()){
                 file.parentFile.mkdirs()
             }
             func(file)
         }
         fun getStaticFile(p:String):File{
-            return File(FileManagement.staticDir,"$uniqueId/$p.tmp")
+            return File(FileManagement.staticDir,"$uniqueId/$p")
         }
     }
 }

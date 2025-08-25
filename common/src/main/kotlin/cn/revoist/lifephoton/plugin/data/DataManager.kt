@@ -3,6 +3,9 @@ package cn.revoist.lifephoton.plugin.data
 import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.plugin.Plugin
 import cn.revoist.lifephoton.plugin.data.pool.BufferPool
+import cn.revoist.lifephoton.plugin.data.pool.DynamicPage
+import cn.revoist.lifephoton.plugin.data.pool.DynamicPageInformation
+import cn.revoist.lifephoton.plugin.data.pool.NormalPage
 import cn.revoist.lifephoton.plugin.data.pool.Page
 import cn.revoist.lifephoton.plugin.data.pool.TempMemoryContainer
 import cn.revoist.lifephoton.plugin.data.pool.splitPage
@@ -41,7 +44,7 @@ class DataManager(val plugin:Plugin) {
         if (databases.map { it.name }.contains(dbName)) {
             return databases.find { it.name == dbName }!!
         }
-        val db = Database.connect("jdbc:postgresql://${Booster.DB_URL}/${dbName}","org.postgresql.Driver",Booster.DB_USERNAME,Booster.DB_PASSWORD)
+        val db = Database.connect(url = "jdbc:postgresql://${Booster.DB_URL}/${dbName}", driver = "org.postgresql.Driver", user = Booster.DB_USERNAME, password = Booster.DB_PASSWORD)
         databases.add(db)
         return db
     }
@@ -89,6 +92,15 @@ class DataManager(val plugin:Plugin) {
     fun usePaginationCache(uri:String):String?{
         return pageCache[uri]
     }
+
+    fun useDynamicPagination(size: Int = 20,lock:Boolean = false,func:(pagination: Int,size: Int) -> DynamicPageInformation):PagingPayloadResponse<*>{
+
+        val code = "dynamic_" + generateCode()
+        val page = DynamicPage(size,"${plugin.id}-${code}",lock,func)
+        pageBuffer[code] = arrayListOf(page)
+        return pageBuffer[code]!![0].toResponse(1)
+    }
+
     fun usePagination(data:List<Any>,count:Int = 20,lock:Boolean = false,cache:String = ""):PagingPayloadResponse<*>{
         val code = generateCode()
         val pages = splitPage(data,count,"${plugin.id}-${code}",lock)
@@ -96,7 +108,7 @@ class DataManager(val plugin:Plugin) {
         if (cache.isNotEmpty()){
             pageCache[cache] = code
         }
-        return pages[0].toResponse()
+        return pages[0].toResponse(1)
     }
     fun getPages(code:String):List<Page>?{
         return pageBuffer[code]
@@ -104,8 +116,11 @@ class DataManager(val plugin:Plugin) {
     fun getPage(code:String,num:Int):Page?{
         val page = pageBuffer[code]
         if (page != null){
+            if (code.startsWith("dynamic_")){
+                return page[0]
+            }
             if (num >= 1 && num <= page.size){
-                return page.find { it.pagination == num }
+                return page.filterIsInstance<NormalPage>().find { it.pagination == num }
             }
         }
         return null

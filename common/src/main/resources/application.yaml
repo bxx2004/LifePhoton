@@ -3,4 +3,4 @@ ktor:
     modules:
       - cn.revoist.lifephoton.ktors.ApplicationKt.module
   deployment:
-    port: 8080
+    port: 808

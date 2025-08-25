@@ -8,9 +8,9 @@ import dev.langchain4j.model.output.structured.Description
  * @description: None
  */
 @Description("功能基因的分析结果")
-class FuncGeneResult {
-    @Description("基因名称")
-    val gene:String = ""
+class GeneResult {
     @Description("表型列表")
     val phenotypes: List<String> = arrayListOf()
+    @Description("推理过程")
+    val summary = ""
 }
