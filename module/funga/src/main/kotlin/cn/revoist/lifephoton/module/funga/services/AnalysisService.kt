@@ -3,6 +3,7 @@ package cn.revoist.lifephoton.module.funga.services
 import cn.revoist.lifephoton.module.authentication.analysisTemplate
 import cn.revoist.lifephoton.module.authentication.data.entity.UserDataEntity
 import cn.revoist.lifephoton.module.authentication.data.table.hasFriend
+import cn.revoist.lifephoton.module.authentication.pages.sendMessage
 import cn.revoist.lifephoton.module.authentication.sendEmail
 import cn.revoist.lifephoton.module.authentication.sendEmailNotice
 import cn.revoist.lifephoton.module.filemanagement.FileManagementAPI
@@ -38,10 +39,12 @@ import cn.revoist.lifephoton.plugin.data.sqltype.gson
 import cn.revoist.lifephoton.tools.submit
 import com.google.gson.JsonArray
 import com.google.gson.stream.JsonReader
+import io.ktor.server.util.toLocalDateTime
 import kotlinx.coroutines.runBlocking
 import org.ktorm.dsl.*
 import java.io.FileReader
 import java.util.Date
+import kotlin.collections.set
 import kotlin.random.Random
 
 /**
@@ -51,6 +54,50 @@ import kotlin.random.Random
  */
 object AnalysisService {
     val tempContainer = FungaPlugin.dataManager.useTempContainer<AnalysisResult>()
+    fun computeAllFoundGene(f:List<MergeData<List<FuncGeneResponse>>>,o:List<MergeData<List<FuncGeneResponse>>>,i:List<MergeData<HashMap<String, Any>>>):List<String>{
+        val list = ArrayList<String>()
+        f.forEach {
+            list.addAll(it.data.map { it.gene })
+        }
+        o.forEach {
+            list.addAll(it.data.map { it.gene })
+        }
+        i.forEach {
+            val genes = if (it.data["genes"] == null){
+                hashMapOf<String, Int>()
+            }else{
+                it.data["genes"] as HashMap<String,Int>
+            }
+            list.addAll(genes.keys)
+        }
+        return list.distinct()
+    }
+    fun computeCount(inp:List<MergeData<List<FuncGeneResponse>>>):HashMap<String,Int>{
+        val map = HashMap<String,Int>()
+        inp.forEach {
+            map[it.database] = it.data.size
+        }
+        return map
+    }
+    fun computeDegreeCount(inp:List<MergeData<HashMap<String, Any>>>):HashMap<String, HashMap<Int,Int>>{
+        val map = HashMap<String, HashMap<Int,Int>>()
+        inp.forEach {
+            val genes = if (it.data["genes"] == null){
+                hashMapOf<String, Int>()
+            }else{
+                it.data["genes"] as HashMap<String,Int>
+            }
+            val count =  HashMap<Int,Int>()
+            genes.forEach {k,v->
+                if (!count.containsKey(v)){
+                    count[v] = 0
+                }
+                count[v] = count[v]!! + 1
+            }
+            map[it.database] = count
+        }
+        return map
+    }
     fun nohupImputationFunGenes(request: ImputationFunGenesRequest,user:UserDataEntity): String {
         val id = (System.currentTimeMillis() + Random(1000).nextInt()).toString()
         submit(-1,-1){
@@ -58,7 +105,7 @@ object AnalysisService {
                 val startDate = Date().toString()
                 val funcGenes = imputationFunGenes(request)
                 val outerGenes = imputationOuterGene(request)
-                val predictGenes = arrayListOf<MergeData<java. util. HashMap<String, Any>>>()
+                val predictGenes = arrayListOf<MergeData<HashMap<String, Any>>>()
                 funcGenes.forEach {fd->
                     val preReq = ImputationPredictGenesRequest()
                     preReq.geneList = request.genes
@@ -75,18 +122,21 @@ object AnalysisService {
                 req.genes = g1 + g2 +g3
 
                 val data = hashMapOf(
-                    "input" to hashMapOf(
-                        "genes" to request.genes,
-                        "phenotypes" to request.phenotypes,
-                        "type" to request.type
-                    ),
                     "func" to funcGenes,
                     "outer" to outerGenes,
                     "predict" to predictGenes,
                     "graph" to GeneService.getInteractionsByGeneList(req),
                 )
-                val summary = AnalysisSummary(request.dbs(),request.genes.size,request.phenotypes,request.type,request.degree,request.topK)
-                val endDate = Date().toString()
+                val summary = AnalysisSummary(
+                    request.dbs(),request.genes,
+                    request.phenotypes,request.type,
+                    request.degree,request.topK,
+                    computeCount(funcGenes),
+                    computeDegreeCount(predictGenes),
+                    computeCount(outerGenes),
+                    computeAllFoundGene(funcGenes,outerGenes,predictGenes)
+                    )
+                val endDate = System.currentTimeMillis()
                 FungaPlugin.dataManager.useDatabase()
                     .insert(GenePhenotypeAnalysisTable){
                         set(GenePhenotypeAnalysisTable.analysis_id,id)
@@ -102,21 +152,36 @@ object AnalysisService {
                         user.username,
                         id,
                         startDate,
-                        endDate,
+                        Date(endDate).toString(),
                         "http://funga.revoist.cn/genePhenotypeDetail?id=${id}"
                     ))
+                    user.sendMessage(
+                        title = "Gene-Phenotype Analysis: Your analysis has been completed",
+                        subtitle = "Click to view this message",
+                        content = analysisTemplate(
+                            "【FUNGA-Analysis】Your analysis has been completed",
+                            user.username,
+                            id,
+                            startDate,
+                            Date(endDate).toString(),
+                            "http://funga.revoist.cn/genePhenotypeDetail?id=${id}")
+                    )
                 }
             }catch (e:Exception){
                 e.printStackTrace()
                 runBlocking {
                     user.sendEmail("【FUNGA-Analysis】Your analysis has been failed","reason：${e.toString()}.")
+                    user.sendMessage(
+                        title = "Gene-Phenotype Analysis: Your analysis has been failed",
+                        subtitle = "Click to view this message",
+                        content = "【FUNGA-Analysis】Your analysis has been failed\",\"reason：${e.toString()}.")
                 }
             }
         }
         return id
     }
 
-    fun imputationFunGenes(request:ImputationFunGenesRequest): List<MergeData<ArrayList<FuncGeneResponse>>> {
+    fun imputationFunGenes(request:ImputationFunGenesRequest): List<MergeData<List<FuncGeneResponse>>> {
         return join(request.dbs()){db->
             val ids = request.genes.asFungaId(db)
             val phenotypes = HashMap<String,List<String>>()
@@ -142,22 +207,22 @@ object AnalysisService {
                 //检验一下是否相关
                 try {
                     val isRelated = if (request.type == "union"){
-                        ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAny(request.phenotypes,ps)
-                        ppp.phenotypes.isNotEmpty()
+                        ppp =  AnalysisAssistant.INSTANCE.isPhenotypeRelatedAny(request.phenotypes,ps)
+                        ppp.result.isNotEmpty()
                     }else{
                         ppp = AnalysisAssistant.INSTANCE.isPhenotypeRelatedAll(request.phenotypes,ps)
-                        ppp.phenotypes.isNotEmpty()
+                        ppp.result.isNotEmpty()
                     }
                     if(isRelated){
                         val result = FungaPlugin.dataManager.useDatabase(db)
                             .mapsWithColumn(GenePhenotypeTable, GenePhenotypeTable.phenotype,GenePhenotypeTable.references){
                                 where {
-                                    GenePhenotypeTable.gene eq gene and (GenePhenotypeTable.phenotype inList ppp.phenotypes)
+                                    GenePhenotypeTable.gene eq gene and (GenePhenotypeTable.phenotype inList ppp.result.keys)
                                 }
                             }.map {
-                                PhenotypeReferences(it["phenotype"].toString(),(it["references"] as List<String>).distinct(),ppp.summary)
+                                PhenotypeReferences(it["phenotype"].toString(),(it["references"] as List<String>).distinct(),ppp.result[it["phenotype"].toString()].toString())
                             }
-                        funcGenes.add(FuncGeneResponse(gene.asSymbol(db),result))
+                        funcGenes.add(FuncGeneResponse(gene.asSymbol(db),result,ppp.summary))
                     }
                 }catch (e:Exception){
                     println("检查异常")
@@ -169,7 +234,11 @@ object AnalysisService {
     }
     fun imputationPredictGene(request: ImputationPredictGenesRequest,currentDegree:Int = 1): List<MergeData<HashMap<String, Any>>> {
         return join(request.dbs()){db->
-            GeneService.getInteractionsByPGR(findInteractions(db,request,currentDegree),db)
+            val filterRes = PredictGeneResponse()
+            for ((degree,genes) in findInteractions(db,request,currentDegree)){
+                filterRes[degree] = genes.filter { !request.genes.contains(it) }
+            }
+            GeneService.getInteractionsByPGR(filterRes,db)
         }
     }
     private fun findInteractions(db: String, request: ImputationPredictGenesRequest, currentDegree: Int): PredictGeneResponse {
@@ -235,13 +304,13 @@ object AnalysisService {
             }
 
             return@join result.map {
-                FuncGeneResponse(it.key.asSymbol(db),it.value)
+                FuncGeneResponse(it.key.asSymbol(db),it.value,"causality")
             }.filter { it.phenotypes.isNotEmpty() }
         }
     }
     fun isReadyImputation(id:String):Boolean{
         return FungaPlugin.dataManager.useDatabase()
-            .from(GenePhenotypeTable)
+            .from(GenePhenotypeAnalysisTable)
             .select(GenePhenotypeAnalysisTable.analysis_id)
             .where {
                 GenePhenotypeAnalysisTable.analysis_id eq id
@@ -250,15 +319,15 @@ object AnalysisService {
     fun getImputation(request:ImputationResultRequest,user: UserDataEntity):Any{
         val dbs = request.dbs()
         val data = FungaPlugin.dataManager.useDatabase()
-            .from(GenePhenotypeTable)
+            .from(GenePhenotypeAnalysisTable)
             .select()
             .where {
-                GenePhenotypeAnalysisTable.user_id eq user.id
+                GenePhenotypeAnalysisTable.analysis_id eq request.id
             }.asIterable().firstOrNull()
         if (data == null) {
             return "Not found data."
         }
-        if (!data[GenePhenotypeAnalysisTable.user_id]!!.hasFriend(user.id)) {
+        if (!data[GenePhenotypeAnalysisTable.user_id]!!.hasFriend(user.id) && data[GenePhenotypeAnalysisTable.user_id]!! != user.id) {
             return "You don't have permission to look this data."
         }
         val result = data[GenePhenotypeAnalysisTable.result]!!
@@ -302,7 +371,7 @@ object AnalysisService {
                 }
             }
             "input"-> {
-                result.input
+                data[GenePhenotypeAnalysisTable.summary]!!
             }
             "func" -> {
                 result.func.filter { dbs.contains(it.database) }

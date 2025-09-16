@@ -1,6 +1,6 @@
 package cn.revoist.lifephoton.module.funga.data.table
 
-import cn.revoist.lifephoton.module.funga.data.entity.inneral.AnalysisResult
+import cn.revoist.lifephoton.module.funga.data.art
 import cn.revoist.lifephoton.module.funga.data.table.type.AnalysisSummary
 import cn.revoist.lifephoton.plugin.data.sqltype.obj
 import org.ktorm.schema.Table
@@ -17,7 +17,7 @@ object GenePhenotypeAnalysisTable : Table<Nothing>("gene_phenotype_analysis"){
     val id = int("id").primaryKey()
     val analysis_id = varchar("analysis_id")
     val user_id = long("user_id")
-    val date = varchar("date")
-    val result = obj<AnalysisResult>("result")
+    val date = long("date")
+    val result = art("result")
     val summary = obj<AnalysisSummary>("summary")
 }

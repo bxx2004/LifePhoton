@@ -23,6 +23,7 @@ class Input{
 class FuncGene{
     lateinit var gene:String
     lateinit var phenotypes:List<PhenotypeReferences>
+    lateinit var summary:String
 }
 class PredictGene{
     lateinit var genes:HashMap<String,Int>

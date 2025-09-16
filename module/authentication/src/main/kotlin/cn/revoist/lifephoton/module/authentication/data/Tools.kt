@@ -98,4 +98,11 @@ object Tools {
                 it.username eq username
             }.firstOrNull()
     }
+    fun getUserById(id: Long): UserDataEntity?{
+        return Auth.dataManager.useDatabase()
+            .sequenceOf(UserDataTable)
+            .filter {
+                it.id eq id
+            }.firstOrNull()
+    }
 }

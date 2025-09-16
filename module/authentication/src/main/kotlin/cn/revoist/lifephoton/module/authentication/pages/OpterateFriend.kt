@@ -3,6 +3,7 @@ package cn.revoist.lifephoton.module.authentication.pages
 import cn.revoist.lifephoton.module.authentication.Auth
 import cn.revoist.lifephoton.module.authentication.asEntity
 import cn.revoist.lifephoton.module.authentication.data.table.FriendTable
+import cn.revoist.lifephoton.module.authentication.data.table.hasFriend
 import cn.revoist.lifephoton.module.authentication.getUser
 import cn.revoist.lifephoton.module.authentication.isLogin
 import cn.revoist.lifephoton.plugin.match
@@ -33,18 +34,28 @@ object OpterateFriend {
     @Api("添加朋友")
     suspend fun add(call:RoutingCall) {
         val id = call.parameters["id"]
-        if (id != null) {
+        try {
+            id!!.toLong()
+        }catch (e: Exception){
+            call.error("id is wrong")
+            return
+        }
+        if (id.isEmpty()) {
             call.error("id don't exist")
         }
         call.match {
             isLogin()
         }.then {
             val user = getUser().asEntity!!
-            Auth.dataManager.useDatabase()
-                .insert(FriendTable){
-                    set(FriendTable.from,user.id)
-                    set(FriendTable.to,id!!.toLong())
-                }
+            if (user.hasFriend(id.toLong())){
+                error("already has friend")
+            }else{
+                Auth.dataManager.useDatabase()
+                    .insert(FriendTable){
+                        set(FriendTable.from,user.id)
+                        set(FriendTable.to,id!!.toLong())
+                    }
+            }
             ok("success")
         }.default {
             error("Not login")

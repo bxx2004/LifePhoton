@@ -39,6 +39,25 @@ fun Database.maps(table: Table<*>, vararg columns: Column<*>, func: Query.()-> Q
     return re
 }
 
+fun Database.first(table: Table<*>, vararg columns: Column<*>, func: Query.()-> Query? = {null}):HashMap<String,Any?>{
+    val selected = ArrayList<Column<*>>()
+    table.columns.forEach {
+        if (!columns.map { it.name }.contains(it.name)){
+            selected.add(it)
+        }
+    }
+    val re = HashMap<String,Any?>()
+    var a=  from(table).select(selected).limit(1)
+    a = func(a)?:a
+    a.forEach { row->
+        selected.forEach {
+            re[it.name] = row[it]
+        }
+    }
+    return re
+}
+
+
 fun Database.mapsWithColumn(table: Table<*>, vararg columns: Column<*>, func: Query.()-> Query? = {null}):List<HashMap<String,Any?>>{
     val selected = ArrayList<Column<*>>()
     table.columns.forEach {

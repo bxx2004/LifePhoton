@@ -8,6 +8,6 @@ import cn.revoist.lifephoton.tools.FrontAPIPrinter
  * @description: None
  */
 fun main() {
-    //FrontAPIPrinter.generate("C:\\Users\\12232\\Desktop\\test")
-    startEngine(arrayOf())
+    FrontAPIPrinter.generate("C:\\Users\\12232\\Desktop\\test")
+    //startEngine(arrayOf())
 }

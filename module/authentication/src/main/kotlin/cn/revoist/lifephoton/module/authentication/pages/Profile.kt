@@ -24,6 +24,12 @@ object Profile :RoutePage("profile/{user}",true,true){
 
     override suspend fun onGet(call: RoutingCall) {
         val username = call.parameters["user"]
+        val ss = (call.sessions.get("user")?: UserSession("-1","-1")) as UserSession
+        val user = Tools.findUserByToken(ss.accessToken)
+        if (user == null){
+            call.error("Please login first")
+            return
+        }
         if (username.isNullOrEmpty()){
             call.error("Please enter a valid username")
             return
@@ -35,8 +41,13 @@ object Profile :RoutePage("profile/{user}",true,true){
                 excludes = arrayListOf("password","accessToken","refreshToken")
             ))
             return
+        }else{
+            if (user.group != "admin"){
+                call.error("Your group isn't the admin")
+                return
+            }
         }
-        val userEntity = Tools.getUser(username)?.toPayloadResponse(
+        val userEntity = Tools.getUserById(username.toLong())?.toPayloadResponse(
              excludes = arrayListOf("password","accessToken","refreshToken")
         )
         if (userEntity == null){

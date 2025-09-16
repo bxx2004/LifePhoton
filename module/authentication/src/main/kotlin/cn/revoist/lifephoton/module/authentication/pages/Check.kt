@@ -1,6 +1,5 @@
 package cn.revoist.lifephoton.module.authentication.pages
 
-import cn.revoist.lifephoton.Booster
 import cn.revoist.lifephoton.ktors.UserSession
 import cn.revoist.lifephoton.plugin.anno.AutoRegister
 import cn.revoist.lifephoton.plugin.route.RoutePage

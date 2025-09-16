@@ -7,9 +7,13 @@ package cn.revoist.lifephoton.module.funga.data.table.type
  */
 data class AnalysisSummary(
     var species:List<String>,
-    var geneCount: Int,
+    var genes: List<String>,
     var phenotypes:List<String>,
     val type:String,
     val degree:Int,
-    val topK: Int
+    val topK: Int,
+    val funcGeneCount: HashMap<String,Int>,
+    val degreeGeneCount: HashMap<String,HashMap<Int,Int>>,
+    val extraGeneCount: HashMap<String,Int>,
+    val selectedGene:List<String>,
 )

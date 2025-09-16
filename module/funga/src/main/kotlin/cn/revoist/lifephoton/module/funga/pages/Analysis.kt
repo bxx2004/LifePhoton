@@ -7,10 +7,13 @@ import cn.revoist.lifephoton.module.funga.FungaPlugin
 import cn.revoist.lifephoton.module.funga.data.entity.request.FuncGeneSortedRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationFunGenesRequest
 import cn.revoist.lifephoton.module.funga.data.entity.request.ImputationResultRequest
+import cn.revoist.lifephoton.module.funga.data.table.GenePhenotypeAnalysisTable
 import cn.revoist.lifephoton.module.funga.data.table.GenePhenotypeTable
 import cn.revoist.lifephoton.module.funga.services.AnalysisService
 import cn.revoist.lifephoton.module.funga.tools.asFungaId
 import cn.revoist.lifephoton.module.funga.tools.asSymbol
+import cn.revoist.lifephoton.plugin.data.maps
+import cn.revoist.lifephoton.plugin.match
 import cn.revoist.lifephoton.plugin.requestBody
 import cn.revoist.lifephoton.plugin.route.*
 import cn.revoist.lifephoton.plugin.route.Route
@@ -30,6 +33,23 @@ import org.ktorm.dsl.where
  */
 @RouteContainer("funga","analysis")
 object Analysis {
+    @Route(GET)
+    suspend fun getAnalysisResult(call: RoutingCall){
+        call.match { isLogin() }
+            .then {
+                val user = call.getUser().asEntity!!
+                call.ok(
+                    FungaPlugin.dataManager.useDatabase()
+                        .maps(GenePhenotypeAnalysisTable, GenePhenotypeAnalysisTable.result, GenePhenotypeAnalysisTable.id){
+                            where {
+                                GenePhenotypeAnalysisTable.user_id eq user.id
+                            }
+                        }
+                )
+            }.default {
+                error("You not login.")
+            }
+    }
     @Route
     suspend fun nohupImputation(call: RoutingCall){
         val request = call.requestBody(ImputationFunGenesRequest::class.java)
@@ -61,7 +81,13 @@ object Analysis {
                 call.error("You not login.")
                 return
             }
-            call.ok(AnalysisService.getImputation(request,user))
+            val res = AnalysisService.getImputation(request,user)
+            if (res is String && !res.contains("\n")){
+                call.error(res)
+            }else{
+                call.ok(res)
+            }
+
         }else{
             call.error("Not query id.")
         }

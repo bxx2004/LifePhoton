@@ -27,6 +27,14 @@ interface PaperAssistant {
     """)
     fun generateDiscretion(@V("data") data:String,@V("prompt")prompt: String):String
 
+
+
+
+
+
+
+
+
     companion object{
         val INSTANCE = AiServices.builder(PaperAssistant::class.java)
             .chatLanguageModel(ModelStore.deepSeekV3)

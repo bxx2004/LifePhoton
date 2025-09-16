@@ -1,6 +1,8 @@
 package cn.revoist.lifephoton.plugin
 
 import cn.revoist.lifephoton.plugin.data.DataManager
+import cn.revoist.lifephoton.plugin.data.pool.DynamicPageInformation
+import cn.revoist.lifephoton.plugin.data.pool.splitPage
 import cn.revoist.lifephoton.plugin.data.sqltype.gson
 import cn.revoist.lifephoton.plugin.route.ok
 import io.ktor.server.application.*
@@ -71,6 +73,7 @@ suspend inline fun <T>RoutingCall.requestBody(clazz:Class<T>):T{
 suspend inline fun RoutingCall.pageSize():Int{
     return (queryParameters["pageSize"]?:"20").toInt()
 }
+//普通分页必须取消缓存
 suspend fun RoutingCall.paging(manager:DataManager,data:List<Any>,lock:Boolean = false,cache:Boolean = true){
     val res = if (cache){
         val id = manager.usePaginationCache(request.uri)

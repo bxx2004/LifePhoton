@@ -21,7 +21,7 @@ fun Application.configure() {
     install(Sessions) {
         cookie<UserSession>("user") {
             cookie.path = "/"
-            cookie.maxAgeInSeconds = 60 * 1000 * 30
+            cookie.maxAgeInSeconds = 60 * 1000 * 30 * 2
         }
     }
     install(Authentication){

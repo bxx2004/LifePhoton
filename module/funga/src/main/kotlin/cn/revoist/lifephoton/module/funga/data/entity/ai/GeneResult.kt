@@ -7,10 +7,10 @@ import dev.langchain4j.model.output.structured.Description
  * @date  2025/7/9 16:55
  * @description: None
  */
-@Description("功能基因的分析结果")
+@Description("表型关联分析结果")
 class GeneResult {
-    @Description("表型列表")
-    val phenotypes: List<String> = arrayListOf()
-    @Description("推理过程")
-    val summary = ""
+    @Description("每个有关联的表型和其对应的推理过程")
+    val result: Map<String, String> = mapOf()
+    @Description("对本次分析简短的科研总结")
+    val summary : String = ""
 }
