@@ -35,3 +35,7 @@ Please use Github Issues.
 ## Contact
 
 email: l_haixu@163.com
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=bxx2004/LifePhoton&type=Date)](https://www.star-history.com/#bxx2004/LifePhoton&Date&LogScale)
